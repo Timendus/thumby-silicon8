@@ -55,6 +55,7 @@ class Silicon8:
 
         self.specType = 0
         self.typeFixed = False
+        self.running = True
 
         self.shiftQuirk = False
         self.jumpQuirk = False
@@ -67,7 +68,7 @@ class Silicon8:
         self.shiftQuirk = self.specType == SCHIP
     	self.jumpQuirk = self.specType == SCHIP
     	self.memQuirk = self.specType != SCHIP
-    	self.vfQuirk = self.specType == VIP or self.specType == BLINDVIP
+    	self.vfQuirk = self.specType == VIP
     	self.clipQuirk = self.specType != XOCHIP
     	self.dispQuirk = self.specType == VIP
 
@@ -272,9 +273,7 @@ class Silicon8:
     		# self.clearPlanes(0)
     		self.bumpSpecType(SCHIP)
     	else:
-            # TODO
-    		# warn("RCA 1802 assembly calls not supported", self.pc-2, op)
-    		# self.DumpStatus()
+            print("RCA 1802 assembly calls not supported at address", self.pc-2, "opcode" op)
     		self.running = false
 
     def maths(self, x, y, n):
@@ -338,9 +337,11 @@ class Silicon8:
             self.pc += 2
 
     def a(self, address):
+        # TODO
         return address
 
     def s(self, address):
+        # TODO
         return address
 
     def bumpSpecType(self, newType):
@@ -349,6 +350,10 @@ class Silicon8:
     	if newType > self.specType:
     		self.specType = newType
     		self.setQuirks()
+    		if newType == SCHIP:
+    			print("Auto-upgraded interpreter to SCHIP")
+    		elif newType == XOCHIP:
+    			print("Auto-upgraded interpreter to XOCHIP")
 
     def setFlag(self, comparison):
         self.v[0xF] = 0
@@ -356,6 +361,7 @@ class Silicon8:
             self.v[0xF] = 1
 
     def draw(self, x, y, n):
+        # TODO
         sprite = ( 0xFF, 0xFF, 0xFF )
         thumby.display.blit(sprite, self.v[x], self.v[y], 8, 3)
         thumby.display.update()
