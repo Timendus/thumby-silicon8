@@ -21,6 +21,422 @@ splash = (
     255,195,189,189,189,255,131,239,239,131,255,133,255,131,235,235,247,255,215,171,171,215,255,255,255,189,129,189,255,131,251,251,135,255,193,187,255,199,171,171,167,255,131,247,251,255,131,235,235,247,255,131,247,251,255,199,171,171,167,255,193,187,255,199,171,171,167,255,131,247,251,255
 )
 
+chip8Font = (
+    0b11110000,
+    0b10010000,
+    0b10010000,
+    0b10010000,
+    0b11110000,
+
+    0b01100000,
+    0b00100000,
+    0b00100000,
+    0b00100000,
+    0b01110000,
+
+    0b11110000,
+    0b00010000,
+    0b11110000,
+    0b10000000,
+    0b11110000,
+
+    0b11110000,
+    0b00010000,
+    0b01110000,
+    0b00010000,
+    0b11110000,
+
+    0b10100000,
+    0b10100000,
+    0b11110000,
+    0b00100000,
+    0b00100000,
+
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b00010000,
+    0b11110000,
+
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b10010000,
+    0b11110000,
+
+    0b11110000,
+    0b00010000,
+    0b00010000,
+    0b00010000,
+    0b00010000,
+
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    0b10010000,
+    0b11110000,
+
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    0b00010000,
+    0b11110000,
+
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    0b10010000,
+    0b10010000,
+
+    0b11110000,
+    0b01010000,
+    0b01110000,
+    0b01010000,
+    0b11110000,
+
+    0b11110000,
+    0b10000000,
+    0b10000000,
+    0b10000000,
+    0b11110000,
+
+    0b11110000,
+    0b01010000,
+    0b01010000,
+    0b01010000,
+    0b11110000,
+
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b10000000,
+    0b11110000,
+
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b10000000,
+    0b10000000,
+
+    0b00111100,
+    0b01111110,
+    0b11100111,
+    0b11000011,
+    0b11000011,
+    0b11000011,
+    0b11000011,
+    0b11100111,
+    0b01111110,
+    0b00111100,
+
+    0b00011000,
+    0b00111000,
+    0b01011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00111100,
+
+    0b00111110,
+    0b01111111,
+    0b11000011,
+    0b00000110,
+    0b00001100,
+    0b00011000,
+    0b00110000,
+    0b01100000,
+    0b11111111,
+    0b11111111,
+
+    0b00111100,
+    0b01111110,
+    0b11000011,
+    0b00000011,
+    0b00001110,
+    0b00001110,
+    0b00000011,
+    0b11000011,
+    0b01111110,
+    0b00111100,
+
+    0b00000110,
+    0b00001110,
+    0b00011110,
+    0b00110110,
+    0b01100110,
+    0b11000110,
+    0b11111111,
+    0b11111111,
+    0b00000110,
+    0b00000110,
+
+    0b11111111,
+    0b11111111,
+    0b11000000,
+    0b11000000,
+    0b11111100,
+    0b11111110,
+    0b00000011,
+    0b11000011,
+    0b01111110,
+    0b00111100,
+
+    0b00111110,
+    0b01111100,
+    0b11100000,
+    0b11000000,
+    0b11111100,
+    0b11111110,
+    0b11000011,
+    0b11000011,
+    0b01111110,
+    0b00111100,
+
+    0b11111111,
+    0b11111111,
+    0b00000011,
+    0b00000110,
+    0b00001100,
+    0b00011000,
+    0b00110000,
+    0b01100000,
+    0b01100000,
+    0b01100000,
+
+    0b00111100,
+    0b01111110,
+    0b11000011,
+    0b11000011,
+    0b01111110,
+    0b01111110,
+    0b11000011,
+    0b11000011,
+    0b01111110,
+    0b00111100,
+
+    0b00111100,
+    0b01111110,
+    0b11000011,
+    0b11000011,
+    0b01111111,
+    0b00111111,
+    0b00000011,
+    0b00000011,
+    0b00111110,
+    0b01111100,
+)
+
+schipFont = (
+    0b11110000,
+    0b10010000,
+    0b10010000,
+    0b10010000,
+    0b11110000,
+
+    0b00100000,
+    0b01100000,
+    0b00100000,
+    0b00100000,
+    0b01110000,
+
+    0b11110000,
+    0b00010000,
+    0b11110000,
+    0b10000000,
+    0b11110000,
+
+    0b11110000,
+    0b00010000,
+    0b01110000,
+    0b00010000,
+    0b11110000,
+
+    0b10010000,
+    0b10010000,
+    0b11110000,
+    0b00010000,
+    0b00010000,
+
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b00010000,
+    0b11110000,
+
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b10010000,
+    0b11110000,
+
+    0b11110000,
+    0b00010000,
+    0b00100000,
+    0b01000000,
+    0b01000000,
+
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    0b10010000,
+    0b11110000,
+
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    0b00010000,
+    0b11110000,
+
+    0b11110000,
+    0b10010000,
+    0b11110000,
+    0b10010000,
+    0b10010000,
+
+    0b11100000,
+    0b10010000,
+    0b11100000,
+    0b10010000,
+    0b11100000,
+
+    0b11110000,
+    0b10000000,
+    0b10000000,
+    0b10000000,
+    0b11110000,
+
+    0b11100000,
+    0b10010000,
+    0b10010000,
+    0b10010000,
+    0b11100000,
+
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b10000000,
+    0b11110000,
+
+    0b11110000,
+    0b10000000,
+    0b11110000,
+    0b10000000,
+    0b10000000,
+
+    0b00111100,
+    0b01111110,
+    0b11100111,
+    0b11000011,
+    0b11000011,
+    0b11000011,
+    0b11000011,
+    0b11100111,
+    0b01111110,
+    0b00111100,
+
+    0b00011000,
+    0b00111000,
+    0b01011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00111100,
+
+    0b00111110,
+    0b01111111,
+    0b11000011,
+    0b00000110,
+    0b00001100,
+    0b00011000,
+    0b00110000,
+    0b01100000,
+    0b11111111,
+    0b11111111,
+
+    0b00111100,
+    0b01111110,
+    0b11000011,
+    0b00000011,
+    0b00001110,
+    0b00001110,
+    0b00000011,
+    0b11000011,
+    0b01111110,
+    0b00111100,
+
+    0b00000110,
+    0b00001110,
+    0b00011110,
+    0b00110110,
+    0b01100110,
+    0b11000110,
+    0b11111111,
+    0b11111111,
+    0b00000110,
+    0b00000110,
+
+    0b11111111,
+    0b11111111,
+    0b11000000,
+    0b11000000,
+    0b11111100,
+    0b11111110,
+    0b00000011,
+    0b11000011,
+    0b01111110,
+    0b00111100,
+
+    0b00111110,
+    0b01111100,
+    0b11100000,
+    0b11000000,
+    0b11111100,
+    0b11111110,
+    0b11000011,
+    0b11000011,
+    0b01111110,
+    0b00111100,
+
+    0b11111111,
+    0b11111111,
+    0b00000011,
+    0b00000110,
+    0b00001100,
+    0b00011000,
+    0b00110000,
+    0b01100000,
+    0b01100000,
+    0b01100000,
+
+    0b00111100,
+    0b01111110,
+    0b11000011,
+    0b11000011,
+    0b01111110,
+    0b01111110,
+    0b11000011,
+    0b11000011,
+    0b01111110,
+    0b00111100,
+
+    0b00111100,
+    0b01111110,
+    0b11000011,
+    0b11000011,
+    0b01111111,
+    0b00111111,
+    0b00000011,
+    0b00000011,
+    0b00111110,
+    0b01111100,
+)
+
 ibm = (
     0x00, 0xe0, 0xa2, 0x2a, 0x60, 0x0c, 0x61, 0x08, 0xd0, 0x1f, 0x70, 0x09, 0xa2, 0x39, 0xd0, 0x1f,
     0xa2, 0x48, 0x70, 0x08, 0xd0, 0x1f, 0x70, 0x04, 0xa2, 0x57, 0xd0, 0x1f, 0x70, 0x08, 0xa2, 0x66,
@@ -38,39 +454,156 @@ VIP       = 1
 SCHIP     = 2
 XOCHIP    = 3
 
+VIP_SCHIP_RAM_SIZE = 3583 + 512
+XOCHIP_RAM_SIZE    = 65023 + 512
+DEFAULT_STACK_SIZE = 12
+SCHIP_STACK_SIZE   = 16  # According to http://devernay.free.fr/hacks/chip8/schip.txt: "Subroutine nesting is limited to 16 levels"
+
+def playSound(playingPattern, pattern, pitch):
+    # TODO
+    return
+
+def stopSound():
+    thumby.audio.stop()
+
+def render(dispWidth, dispHeight, display):
+    thumby.display.fill(0)
+    thumby.display.blit(display, 4, 4, dispWidth, dispHeight)
+    thumby.display.update()
+
 # Main Silicon8 class that holds the virtual CPU
+# Pretty much a direct port of https://github.com/Timendus/silicon8 to MicroPython
 class Silicon8:
     def __init__(self):
-        # CHIP-8 interpreter state
-        self.ram = [0] * 4096 # (65023 + 512)
-        self.stack = [0] * 16
-        self.v = [0] * 16
-        self.pc = 0x200
-        self.sp = 15
+        # CHIP-8 interpreter state that isn't initialized elsewhere
+        self.v = bytearray(16)
         self.i = 0
+        self.keyboard = [0] * 16
+        self.userFlags = bytearray(16)
+
+    def start(self):
+    	self.running = True
+
+    def stop(self):
+    	self.running = False
+
+    def clockTick(self):
+        # Tick timers
+        if self.dt > 0:
+        	self.dt -= 1
+
+        if self.st > 0:
+        	if not self.playing:
+        		self.playing = True
+        		playSound(self.playingPattern, self.pattern, self.pitch)
+        		self.audioDirty = False
+        	self.st -= 1
+        else:
+        	if self.playing:
+        		self.playing = False
+        		self.audioDirty = False
+        		stopSound()
+
+        # Run cycles
+        for i in range(0, self.cyclesPerFrame):
+        	self.cycle()
+
+        # Trigger audio updates if dirty
+        if self.audioDirty:
+        	playSound(self.playingPattern, self.pattern, self.pitch)
+        	self.audioDirty = False
+
+        # Render display if dirty
+        if self.SD:
+        	self.renderToDisplayBuffer()
+        	render(self.DispWidth, self.DispHeight, self.display)
+        	self.SD = False
+
+        # Register display redraw interrupt for dispQuirk
+        if self.WaitForInt == 1:
+        	self.WaitForInt = 2
+
+    def reset(self, interpreter):
+        self.stop()
+
+        if interpreter != AUTO:
+            self.specType = interpreter
+            self.typeFixed = True
+        else:
+            self.specType = VIP
+            self.typeFixed = False
+
+        if interpreter == VIP:
+        	self.RAMSize = VIP_SCHIP_RAM_SIZE
+    		self.stackSize = DEFAULT_STACK_SIZE
+    	elif interpreter == SCHIP:
+    		self.RAMSize = VIP_SCHIP_RAM_SIZE
+    		self.stackSize = SCHIP_STACK_SIZE
+    	elif interpreter == XOCHIP:
+    		self.RAMSize = XOCHIP_RAM_SIZE
+    		self.stackSize = DEFAULT_STACK_SIZE
+    	elif interpreter == AUTO: # Takes maximum sizes, determines limits at runtime
+    		self.RAMSize = XOCHIP_RAM_SIZE
+    		self.stackSize = SCHIP_STACK_SIZE
+
+        # Initialize registers
+        self.pc = 0x200
+        self.sp = self.stackSize - 1
         self.dt = 0
         self.st = 0
-        self.keyboard = [0] * 16
-        self.userFlags = [0] * 16
 
-        self.specType = 0
-        self.typeFixed = False
+        # Initialize XO-Chip audio "registers"
+        self.pattern = [0] * 16
+        self.pitch = 4000
+        self.playingPattern = False
+        self.audioDirty = False
+
+        # Initialize memory
+        self.initDisplay(64, 32, 1)
+        self.stack = [0] * self.stackSize
+        self.planeBuffer = bytearray(128*64)
+        self.display = bytearray(9*40)   # 72 / 8 * 40
+        self.ram = bytearray(self.RAMSize)
+
+        # Initialize internal variables
+        for i in range(len(self.keyboard)):
+        	self.keyboard[i] = False
+
+        self.waitForKey = False
+        self.WaitForInt = 0
+        self.playing = False
+        self.SD = True
         self.running = True
+        self.plane = 1
+        self.planes = 1
+        self.cyclesPerFrame = 30
 
-        self.shiftQuirk = False
-        self.jumpQuirk = False
-        self.memQuirk = False
-        self.vfQuirk = False
-        self.clipQuirk = False
-        self.dispQuirk = False
+        # Determine quirks to use
+        self.setQuirks()
 
-    def setQuirks():
+        # Load the appropriate font
+        self.loadFont()
+
+        self.start()
+
+    def setQuirks(self):
         self.shiftQuirk = self.specType == SCHIP
-    	self.jumpQuirk = self.specType == SCHIP
-    	self.memQuirk = self.specType != SCHIP
-    	self.vfQuirk = self.specType == VIP
-    	self.clipQuirk = self.specType != XOCHIP
-    	self.dispQuirk = self.specType == VIP
+        self.jumpQuirk = self.specType == SCHIP
+        self.memQuirk = self.specType != SCHIP
+        self.vfQuirk = self.specType == VIP
+        self.clipQuirk = self.specType != XOCHIP
+        self.dispQuirk = self.specType == VIP
+
+    def bumpSpecType(self, newType):
+        if self.typeFixed:
+            return
+        if newType > self.specType:
+            self.specType = newType
+            self.setQuirks()
+            if newType == SCHIP:
+                print("Auto-upgraded interpreter to SCHIP")
+            elif newType == XOCHIP:
+                print("Auto-upgraded interpreter to XOCHIP")
 
     def loadProgram(self, program):
         for i in range(0, len(program)):
@@ -78,6 +611,9 @@ class Silicon8:
 
     # Run the CPU for one cycle and return control
     def cycle(self):
+        if not self.running:
+            return
+
         op  = self.ram[self.a(self.pc)]<<8 | self.ram[self.a(self.pc+1)]
         x   = self.ram[self.a(self.pc)] & 0x0F
         y   = (self.ram[self.a(self.pc+1)] & 0xF0) >> 4
@@ -186,7 +722,7 @@ class Silicon8:
                 self.st = self.v[x]
             elif nn == 0x1E:
     			# Add vX to i register
-                self.i += self.v[x]
+                self.i += self.v[x] & 0xFFFF
             elif nn == 0x29:
     			# Set i register to font data
                 self.i = self.v[x] * 5
@@ -200,6 +736,7 @@ class Silicon8:
                 self.ram[self.a(self.i+1)] = self.v[x] % 100 / 10
                 self.ram[self.a(self.i+2)] = self.v[x] % 10
             elif nn == 0x3A:
+                # TODO
     			# XO-Chip: Change pitch of audio pattern
     			# cpu.pitch = 4000 * math.Pow(2, (float64(cpu.v[x])-64)/48)
     			# cpu.playingPattern = true
@@ -210,13 +747,13 @@ class Silicon8:
                 for i in range(0, x + 1):
                     self.ram[self.a(self.i + i)] = self.v[i]
                 if self.memQuirk:
-                    self.i += x + 1
+                    self.i = (self.i + x + 1) & 0xFFFF
             elif nn == 0x65:
     			# Load registers from memory (regular VIP/SCHIP)
                 for i in range(0, x + 1):
                     self.v[i] = self.ram[self.a(self.i + i)]
                 if self.memQuirk:
-                    self.i += x + 1
+                    self.i = (self.i + x + 1) & 0xFFFF
             elif nn == 0x75:
     			# Store registers to "user flags" (SCHIP)
                 for i in range(0, x + 1):
@@ -243,7 +780,7 @@ class Silicon8:
 
         if op == 0x00E0:
             # Clear screen
-            thumby.display.fill(0)
+            self.clearScreen()
         elif op == 0x00EE:
             # Return
             self.sp += 1
@@ -261,20 +798,18 @@ class Silicon8:
     		self.running = false
     		self.bumpSpecType(SCHIP)
     	elif op == 0x00FE:
-            # TODO
     		# Set normal screen resolution
-    		# self.initDisplay(64, 32, self.planes)
-    		# self.clearPlanes(0)
+    		self.initDisplay(64, 32, self.planes)
+    		self.clearPlanes(0)
     		self.bumpSpecType(SCHIP)
     	elif op == 0x00FF:
-            # TODO
     		# Set extended screen resolution
-    		# self.initDisplay(128, 64, self.planes)
-    		# self.clearPlanes(0)
+    		self.initDisplay(128, 64, self.planes)
+    		self.clearPlanes(0)
     		self.bumpSpecType(SCHIP)
     	else:
-            print("RCA 1802 assembly calls not supported at address", self.pc-2, "opcode" op)
-    		self.running = false
+            print("RCA 1802 assembly calls not supported at address", self.pc-2, "opcode", op)
+            self.running = false
 
     def maths(self, x, y, n):
     	if n == 0x0:
@@ -344,34 +879,137 @@ class Silicon8:
         # TODO
         return address
 
-    def bumpSpecType(self, newType):
-        if self.typeFixed:
-    		return
-    	if newType > self.specType:
-    		self.specType = newType
-    		self.setQuirks()
-    		if newType == SCHIP:
-    			print("Auto-upgraded interpreter to SCHIP")
-    		elif newType == XOCHIP:
-    			print("Auto-upgraded interpreter to XOCHIP")
-
     def setFlag(self, comparison):
         self.v[0xF] = 0
         if comparison:
             self.v[0xF] = 1
 
-    def draw(self, x, y, n):
-        # TODO
-        sprite = ( 0xFF, 0xFF, 0xFF )
-        thumby.display.blit(sprite, self.v[x], self.v[y], 8, 3)
-        thumby.display.update()
+    # Display magic
 
+    def clearScreen(self):
+        self.clearPlanes(self.plane ^ 0xFF)
+
+    def clearPlanes(self, planes):
+        for i in range(len(self.planeBuffer)):
+            self.planeBuffer[i] = self.planeBuffer[i] & planes
+        self.SD = True
+
+    # TODO: scroll instructions
+
+    def draw(self, x, y, n):
+        if self.waitForInterrupt():
+            return
+
+    	# Get real sprite position & height
+    	xPos = self.v[x]
+    	yPos = self.v[y]
+    	while xPos >= self.DispWidth:
+    		xPos -= self.DispWidth
+    	while yPos >= self.DispHeight:
+    		yPos -= self.DispHeight
+        height = n
+        if height == 0:
+            height = 16
+
+        # Do the actual drawing
+        erases = False
+        ramPointer = self.i
+        plane = 1
+
+        while plane < 16:                  # Go through four planes
+            if (plane & self.plane) != 0:      # If this plane is currently selected
+                planeBufPointer = yPos*self.DispWidth + xPos
+                for i in range(0, height):      # Draw N lines
+                    # Does this line fall off the bottom of the screen?
+                    if planeBufPointer > self.DispWidth * self.DispHeight:
+                        if self.clipQuirk:
+                            continue
+                        else:
+                            planeBufPointer -= self.DispWidth * self.DispHeight
+                    lineErases = self.drawLine(ramPointer, planeBufPointer, plane)
+                    erases = erases or lineErases
+                    ramPointer += 1
+                    if n == 0:
+                      lineErases = self.drawLine(ramPointer, planeBufPointer+8, plane)
+                      erases = erases or lineErases
+                      ramPointer += 1
+                    planeBufPointer += self.DispWidth
+            plane = plane << 1
+
+        self.SD = True
+        self.setFlag(erases)
+        if n == 0:
+        	self.bumpSpecType(SCHIP)
+
+    def waitForInterrupt(self):
+        if not self.dispQuirk:
+            return False
+
+        if self.WaitForInt == 0:
+            self.WaitForInt = 1
+            self.pc -= 2
+            return True
+        elif self.WaitForInt == 1:
+            self.pc -= 2
+            return True
+        else:
+            self.WaitForInt = 0
+            return False
+
+    def drawLine(self, ramPointer, planeBufPointer, plane):
+        pixels = self.ram[self.a(ramPointer)]
+        erases = False
+        bit = 128
+        while bit > 0:
+            if (pixels & bit) != 0:
+                erases = erases or ((self.planeBuffer[planeBufPointer]&plane) != 0)
+                self.planeBuffer[planeBufPointer] ^= plane
+            planeBufPointer += 1
+            # Did we cross the edge of the screen?
+            if (planeBufPointer % self.DispWidth) == 0:
+                if self.clipQuirk:
+                    break
+                else:
+                    planeBufPointer -= self.DispWidth
+            bit = bit >> 1
+        return erases
+
+    def initDisplay(self, width, height, planes):
+        self.DispWidth = width
+        self.DispHeight = height
+        self.planes = planes
+
+    def renderToDisplayBuffer(self):
+        bitmask = 128
+        pointer = 0
+        for y in range(0, self.DispHeight, 8):
+            for x in range(0, self.DispWidth):
+                for row in range(7, -1, -1):
+                    pixel = self.planeBuffer[(y + row) * self.DispWidth + x] # & 1
+                    if pixel > 0:
+                        self.display[pointer] = self.display[pointer] | bitmask
+                    bitmask = bitmask >> 1
+                    if bitmask == 0:
+                        bitmask = 128
+                        pointer += 1
+
+    def loadFont(self):
+        if self.specType == SCHIP or self.specType == XOCHIP:
+            font = schipFont
+        else:
+            font = chip8Font
+
+        for i in range(len(font)):
+            self.ram[i] = font[i];
+
+# Actual program start:
 
 thumby.audio.stop()
 thumby.display.blit(splash, 0, 0, 72, 40)
 thumby.display.update()
 
 cpu = Silicon8()
+cpu.reset(VIP)
 cpu.loadProgram(ibm)
 for i in range(0, 10):
-    cpu.cycle()
+    cpu.clockTick()
