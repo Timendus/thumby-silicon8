@@ -29,7 +29,8 @@ the [Thumby IDE](https://tinycircuits.github.io/).
 
 For the time being, you have to hardcode a ROM into `main.py`. At the bottom of
 the file, where it says `cpu.loadProgram(....)` you can supply any ROM you like
-in the form of an array of bytes.
+in the form of an array or tuples of bytes. You can use the `convert.js` script
+to convert any `*.ch8` file into the right form.
 
 I plan on having Silicon8 find any `*.ch8` files on the Thumby filesystem and
 allowing you to run those. But since the filesystem isn't stable yet in the
