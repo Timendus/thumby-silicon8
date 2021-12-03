@@ -304,6 +304,16 @@ def render(dispWidth, dispHeight, display):
     thumby.display.blit(display, 4, 4, dispWidth, dispHeight)
     thumby.display.update()
 
+def getKeys():
+    keyboard = bytearray(16)
+    keyboard[4] = thumby.buttonB.pressed()
+    keyboard[5] = thumby.buttonU.pressed()
+    keyboard[6] = thumby.buttonA.pressed()
+    keyboard[7] = thumby.buttonL.pressed()
+    keyboard[8] = thumby.buttonD.pressed()
+    keyboard[9] = thumby.buttonR.pressed()
+    return keyboard
+
 # Main Silicon8 class that holds the virtual CPU
 # Pretty much a direct port of https://github.com/Timendus/silicon8 to MicroPython
 class Silicon8:
@@ -311,7 +321,6 @@ class Silicon8:
         # CHIP-8 interpreter state that isn't initialized elsewhere
         self.v = bytearray(16)
         self.i = 0
-        self.keyboard = [0] * 16
         self.userFlags = bytearray(16)
 
     def start(self):
@@ -399,9 +408,6 @@ class Silicon8:
         self.ram = bytearray(self.RAMSize)
 
         # Initialize internal variables
-        for i in range(len(self.keyboard)):
-        	self.keyboard[i] = False
-
         self.waitForKey = False
         self.WaitForInt = 0
         self.playing = False
@@ -519,10 +525,10 @@ class Silicon8:
             self.draw(x, y, n)
         elif check == 0xE000:
             if nn == 0x9E:
-                if self.keyboard[self.v[x]]:
+                if getKeys()[self.v[x]]:
                     self.skipNextInstruction()
             elif nn == 0xA1:
-                if not self.keyboard[self.v[x]]:
+                if not getKeys()[self.v[x]]:
                     self.skipNextInstruction()
         elif check == 0xF000:
             if nn == 0x00:
