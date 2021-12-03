@@ -826,7 +826,11 @@ class Silicon8:
                 for row in range(7, -1, -1):
                     pixel = self.planeBuffer[(y + row) * self.DispWidth + x] # & 1
                     if pixel > 0:
+                        # Set pixel
                         self.display[pointer] = self.display[pointer] | bitmask
+                    else:
+                        # Reset pixel
+                        self.display[pointer] = self.display[pointer] & (bitmask ^ 0xFF)
                     bitmask = bitmask >> 1
                     if bitmask == 0:
                         bitmask = 128
