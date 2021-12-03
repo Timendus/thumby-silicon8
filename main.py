@@ -500,7 +500,6 @@ def stopSound():
     thumby.audio.stop()
 
 def render(dispWidth, dispHeight, display):
-    thumby.display.fill(0)
     thumby.display.blit(display, 4, 4, dispWidth, dispHeight)
     thumby.display.update()
 
@@ -949,10 +948,10 @@ class Silicon8:
         ramPointer = self.i
         plane = 1
 
-        while plane < 16:                  # Go through four planes
-            if (plane & self.plane) != 0:      # If this plane is currently selected
+        while plane < 4:                     # Go through two planes
+            if (plane & self.plane) != 0:    # If this plane is currently selected
                 planeBufPointer = yPos*self.DispWidth + xPos
-                for i in range(0, height):      # Draw N lines
+                for i in range(0, height):   # Draw N lines
                     # Does this line fall off the bottom of the screen?
                     if planeBufPointer > self.DispWidth * self.DispHeight:
                         if self.clipQuirk:
@@ -1044,5 +1043,6 @@ thumby.display.update()
 cpu = Silicon8()
 cpu.reset(VIP)
 cpu.loadProgram(test)
+thumby.display.fill(0)
 for i in range(0, 1000):
     cpu.clockTick()
