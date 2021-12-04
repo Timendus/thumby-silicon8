@@ -309,10 +309,49 @@ def playSound(playingPattern, pattern, pitch):
 def stopSound():
     thumby.audio.stop()
 
-def render(dispWidth, dispHeight, display):
-    thumby.display.blit(display, 4, 4, dispWidth, dispHeight)
+# Render Silicon8 planeBuffer to Thumby display as best as you can
+def render(dispWidth, dispHeight, planeBuffer):
+    if dispWidth <= thumby.DISPLAY_W:
+        minX = 0
+        maxX = dispWidth
+        screenX = int((thumby.DISPLAY_W - dispWidth) / 2)
+    else:
+        minX = int((dispWidth - thumby.DISPLAY_W) / 2)
+        maxX = int(dispWidth - (dispWidth - thumby.DISPLAY_W) / 2)
+        screenX = 0
+
+    if dispHeight <= thumby.DISPLAY_H:
+        minY = 0
+        maxY = dispHeight
+        screenY = int((thumby.DISPLAY_H - dispHeight) / 2)
+    else:
+        minY = int((dispHeight - thumby.DISPLAY_H) / 2)
+        maxY = int(dispHeight - (dispHeight - thumby.DISPLAY_H) / 2)
+        screenY = 0
+
+    bitmask = 128
+    pointer = 0
+    display = bytearray(9*40)   # 72 / 8 * 40
+    for y in range(minY, maxY, 8):
+        for x in range(minX, maxX):
+            for row in range(7, -1, -1):
+                pixel = planeBuffer[(y + row) * dispWidth + x] # & 1
+                if pixel > 0:
+                    # Set pixel
+                    display[pointer] = display[pointer] | bitmask
+                else:
+                    # Reset pixel
+                    display[pointer] = display[pointer] & (bitmask ^ 0xFF)
+                bitmask = bitmask >> 1
+                if bitmask == 0:
+                    bitmask = 128
+                    pointer += 1
+
+    thumby.display.blit(display, screenX, screenY,
+        min(dispWidth, thumby.DISPLAY_W), min(dispHeight, thumby.DISPLAY_H))
     thumby.display.update()
 
+# Get an array of keys that maps Thumby keys to CHIP-8 keys
 def getKeys():
     keyboard = bytearray(16)
     keyboard[4] = thumby.buttonB.pressed()
@@ -366,8 +405,7 @@ class Silicon8:
 
         # Render display if dirty
         if self.SD:
-        	self.renderToDisplayBuffer()
-        	render(self.DispWidth, self.DispHeight, self.display)
+        	render(self.DispWidth, self.DispHeight, self.planeBuffer)
         	self.SD = False
 
         # Register display redraw interrupt for dispQuirk
@@ -419,7 +457,6 @@ class Silicon8:
         self.initDisplay(64, 32, 1)
         self.stack = [0] * self.stackSize
         self.planeBuffer = bytearray(128*64)
-        self.display = bytearray(9*40)   # 72 / 8 * 40
         self.ram = bytearray(self.RAMSize)
 
         # Initialize internal variables
@@ -852,24 +889,6 @@ class Silicon8:
         self.DispWidth = width
         self.DispHeight = height
         self.planes = planes
-
-    def renderToDisplayBuffer(self):
-        bitmask = 128
-        pointer = 0
-        for y in range(0, self.DispHeight, 8):
-            for x in range(0, self.DispWidth):
-                for row in range(7, -1, -1):
-                    pixel = self.planeBuffer[(y + row) * self.DispWidth + x] # & 1
-                    if pixel > 0:
-                        # Set pixel
-                        self.display[pointer] = self.display[pointer] | bitmask
-                    else:
-                        # Reset pixel
-                        self.display[pointer] = self.display[pointer] & (bitmask ^ 0xFF)
-                    bitmask = bitmask >> 1
-                    if bitmask == 0:
-                        bitmask = 128
-                        pointer += 1
 
     def loadFont(self):
         if self.specType == SCHIP or self.specType == XOCHIP:
