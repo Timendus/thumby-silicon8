@@ -13,6 +13,21 @@ from framebuf import FrameBuffer, MONO_VLSB
 gc.enable()
 # machine.freq(125000000)
 
+splash = (
+    0,0,0,0,0,0,0,224,248,60,14,14,7,7,3,3,7,7,14,14,12,0,0,0,0,0,32,32,192,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,224,240,120,28,14,6,6,6,14,28,120,240,224,0,
+    0,0,0,0,0,0,0,15,31,56,112,96,96,224,192,192,192,128,128,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,15,30,184,240,224,224,224,240,184,30,15,7,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,3,15,254,248,0,0,196,64,0,0,255,0,0,196,64,0,0,0,128,64,64,64,0,0,0,128,64,64,128,0,0,0,192,64,64,64,128,0,0,0,252,254,15,3,1,0,0,0,1,3,15,254,252,0,
+    0,48,112,112,224,224,192,192,192,192,192,192,192,192,224,96,112,56,28,15,7,1,0,0,63,0,0,0,63,0,0,63,0,0,0,15,16,32,32,32,0,0,15,16,32,32,16,15,0,0,63,0,0,0,0,63,0,0,3,7,15,28,56,48,48,48,56,28,15,7,3,0,
+    0,60,66,66,66,0,124,16,16,124,0,122,0,124,20,20,8,0,40,84,84,40,0,0,0,66,126,66,0,124,4,4,120,0,62,68,0,56,84,84,88,0,124,8,4,0,124,20,20,8,0,124,8,4,0,56,84,84,88,0,62,68,0,56,84,84,88,0,124,8,4,0
+)
+
+# Stop sound and show splash while we wait ;)
+thumby.audio.stop()
+thumby.display.blit(splash, 0, 0, 72, 40)
+thumby.display.update()
+
+# Different ROMs to test with
+
 ibm = (
     0x00, 0xe0, 0xa2, 0x2a, 0x60, 0x0c, 0x61, 0x08, 0xd0, 0x1f, 0x70, 0x09, 0xa2, 0x39, 0xd0, 0x1f,
     0xa2, 0x48, 0x70, 0x08, 0xd0, 0x1f, 0x70, 0x04, 0xa2, 0x57, 0xd0, 0x1f, 0x70, 0x08, 0xa2, 0x66,
@@ -215,13 +230,7 @@ space = (
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 )
 
-splash = (
-    255,255,255,255,255,255,255,31,7,195,241,241,248,248,252,252,248,248,241,241,243,255,255,255,255,255,223,223,63,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,31,15,135,227,241,249,249,249,241,227,135,15,31,255,
-    255,255,255,255,255,255,255,240,224,199,143,159,159,31,63,63,63,127,127,255,255,255,255,255,255,255,255,255,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,248,240,225,71,15,31,31,31,15,71,225,240,248,255,
-    255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,254,254,252,240,1,7,255,255,59,191,255,255,0,255,255,59,191,255,255,255,127,191,191,191,255,255,255,127,191,191,127,255,255,255,63,191,191,191,127,255,255,255,3,1,240,252,254,255,255,255,254,252,240,1,3,255,
-    255,207,143,143,31,31,63,63,63,63,63,63,63,63,31,159,143,199,227,240,248,254,255,255,192,255,255,255,192,255,255,192,255,255,255,240,239,223,223,223,255,255,240,239,223,223,239,240,255,255,192,255,255,255,255,192,255,255,252,248,240,227,199,207,207,207,199,227,240,248,252,255,
-    255,195,189,189,189,255,131,239,239,131,255,133,255,131,235,235,247,255,215,171,171,215,255,255,255,189,129,189,255,131,251,251,135,255,193,187,255,199,171,171,167,255,131,247,251,255,131,235,235,247,255,131,247,251,255,199,171,171,167,255,193,187,255,199,171,171,167,255,131,247,251,255
-)
+# Font definitions for the interpreter built in fonts
 
 chip8Font = (
     0b11110000, 0b10010000, 0b10010000, 0b10010000, 0b11110000,
@@ -319,6 +328,7 @@ def getKeys():
 class Silicon8:
     def __init__(self):
         # CHIP-8 interpreter state that isn't initialized elsewhere
+        self.stop()
         self.v = bytearray(16)
         self.i = 0
         self.userFlags = bytearray(16)
@@ -329,7 +339,10 @@ class Silicon8:
     def stop(self):
     	self.running = False
 
-    def clockTick(self):
+    def clockTick(self, t):
+        if not self.running:
+            return
+
         # Tick timers
         if self.dt > 0:
         	self.dt -= 1
@@ -346,10 +359,6 @@ class Silicon8:
         		self.audioDirty = False
         		stopSound()
 
-        # Run cycles
-        for i in range(0, self.cyclesPerFrame):
-        	self.cycle()
-
         # Trigger audio updates if dirty
         if self.audioDirty:
         	playSound(self.playingPattern, self.pattern, self.pitch)
@@ -364,6 +373,12 @@ class Silicon8:
         # Register display redraw interrupt for dispQuirk
         if self.WaitForInt == 1:
         	self.WaitForInt = 2
+
+    def run(self, program):
+        for i in range(0, len(program)):
+            self.ram[i + 0x200] = program[i]
+        while True:
+            self.cycle()
 
     def reset(self, interpreter):
         self.stop()
@@ -443,10 +458,6 @@ class Silicon8:
                 print("Auto-upgraded interpreter to SCHIP")
             elif newType == XOCHIP:
                 print("Auto-upgraded interpreter to XOCHIP")
-
-    def loadProgram(self, program):
-        for i in range(0, len(program)):
-            self.ram[i + 0x200] = program[i]
 
     # Run the CPU for one cycle and return control
     def cycle(self):
@@ -871,13 +882,15 @@ class Silicon8:
 
 # Actual program start:
 
-thumby.audio.stop()
-thumby.display.blit(splash, 0, 0, 72, 40)
-thumby.display.update()
-
+# Instantiate interpreter
 cpu = Silicon8()
+
+# Set up 60Hz interrupt handler
+timer = machine.Timer()
+timer.init(mode=timer.PERIODIC, period=17, callback=cpu.clockTick)
+
+# Start the interpreter
 cpu.reset(VIP)
-cpu.loadProgram(test)
 thumby.display.fill(0)
-for i in range(0, 1000):
-    cpu.clockTick()
+thumby.display.update()
+cpu.run(test)
