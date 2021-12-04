@@ -537,36 +537,53 @@ class Silicon8:
                 self.pc += 2
                 self.bumpSpecType(XOCHIP)
             elif nn == 0x01:
+                # Enable the second plane if it hasn't been enabled yet
+                if self.planes == 1:
+                    self.initDisplay(self.DispWidth, self.DispHeight, 2)
                 # Select plane X
-                # No-op in this implementation
-                # TODO
+                self.plane = x
                 self.bumpSpecType(XOCHIP)
             elif nn == 0x02:
                 # XO-Chip: Load 16 bytes of audio buffer from (i)
-                # No-op in this implementation
-                # TODO
+                for i in range(0, 16):
+                    self.pattern[i] = self.ram[self.a(self.i+i)]
+                self.playingPattern = True
+                self.audioDirty = True
                 self.bumpSpecType(XOCHIP)
             elif nn == 0x07:
                 # Set register to value of delay timer
     			self.v[x] = self.dt
             elif nn == 0x0A:
                 # Wait for keypress and return key in vX
-                # TODO
-                nop = 1
+                if cpu.waitForKey:
+                    keyboard = getKeys()
+                    for i in range(len(keyboard)):
+                        if keyboard[i]:
+                            self.v[x] = i
+                            self.waitForKey = False
+                            return
+                    self.pc -= 2
+                else:
+                    self.pc -= 2
+                    keyboard = getKeys()
+                    for i in range(len(keyboard)):
+                        if keyboard[i]:
+                            return
+                    self.waitForKey = True
             elif nn == 0x15:
-    			# Set delay timer to value in vX
+                # Set delay timer to value in vX
                 self.dt = self.v[x]
             elif nn == 0x18:
-    			# Set sound timer to value in vX
+                # Set sound timer to value in vX
                 self.st = self.v[x]
             elif nn == 0x1E:
-    			# Add vX to i register
+                # Add vX to i register
                 self.i += self.v[x] & 0xFFFF
             elif nn == 0x29:
-    			# Set i register to font data
+                # Set i register to font data
                 self.i = self.v[x] * 5
             elif nn == 0x30:
-    			# Set i register to large font data
+                # Set i register to large font data
                 self.i = self.v[x]*10 + 80
                 self.bumpSpecType(SCHIP)
             elif nn == 0x33:
@@ -575,31 +592,30 @@ class Silicon8:
                 self.ram[self.a(self.i+1)] = int(self.v[x] % 100 / 10)
                 self.ram[self.a(self.i+2)] = self.v[x] % 10
             elif nn == 0x3A:
-                # TODO
-    			# XO-Chip: Change pitch of audio pattern
-    			# cpu.pitch = 4000 * math.Pow(2, (float64(cpu.v[x])-64)/48)
-    			# cpu.playingPattern = true
-    			# cpu.audioDirty = true
+                # XO-Chip: Change pitch of audio pattern
+                self.pitch = 4000 * pow(2, (self.v[x]-64)/48)
+                self.playingPattern = True
+                self.audioDirty = True
                 self.bumpSpecType(XOCHIP)
             elif nn == 0x55:
-    			# Store registers to memory (regular VIP/SCHIP)
+                # Store registers to memory (regular VIP/SCHIP)
                 for i in range(0, x + 1):
                     self.ram[self.a(self.i + i)] = self.v[i]
                 if self.memQuirk:
                     self.i = (self.i + x + 1) & 0xFFFF
             elif nn == 0x65:
-    			# Load registers from memory (regular VIP/SCHIP)
+                # Load registers from memory (regular VIP/SCHIP)
                 for i in range(0, x + 1):
                     self.v[i] = self.ram[self.a(self.i + i)]
                 if self.memQuirk:
                     self.i = (self.i + x + 1) & 0xFFFF
             elif nn == 0x75:
-    			# Store registers to "user flags" (SCHIP)
+                # Store registers to "user flags" (SCHIP)
                 for i in range(0, x + 1):
                     self.userFlags[i] = self.v[i]
                 self.bumpSpecType(SCHIP)
             elif nn == 0x85:
-    			# Load registers from "user flags" (SCHIP)
+                # Load registers from "user flags" (SCHIP)
                 for i in range(0, x + 1):
                     self.v[i] = self.userFlags[i]
                 self.bumpSpecType(SCHIP)
@@ -711,11 +727,19 @@ class Silicon8:
             self.pc += 2
 
     def a(self, address):
-        # TODO
+        if address >= self.RAMSize:
+            print("Program attempted to access RAM outsize of memory")
+            return 0
+        if address >= VIP_SCHIP_RAM_SIZE:
+            self.bumpSpecType(XOCHIP)
         return address
 
     def s(self, address):
-        # TODO
+        if address >= self.stackSize:
+            print("Program attempted to access invalid stack memory")
+            return 0
+        if self.stackSize == SCHIP_STACK_SIZE and address < (SCHIP_STACK_SIZE-DEFAULT_STACK_SIZE):
+            self.bumpSpecType(SCHIP)
         return address
 
     def setFlag(self, comparison):
