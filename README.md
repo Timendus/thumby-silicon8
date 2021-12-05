@@ -18,6 +18,31 @@ This is my first experiment with MicroPython and the Thumby, so it's probably an
 inefficient mess in the eyes of a "real" MicroPython developer. But this is a
 fun learning project for me 😄
 
+## Installation
+
+While it's not in the "Arcade" yet, you can manually download or copy & paste
+[`main.py`](./main.py) from this repository and load it onto your Thumby using
+the [Thumby IDE](https://tinycircuits.github.io/).
+
+### Getting CHIP-8 games into Silicon8 for Thumby
+
+For the time being, you have to hardcode your ROMs into `main.py`. At the top of
+the file, from line 38 onwards, a dictionary of programs is defined. You can add
+any ROM you like to this dictionary by following the structure of the other
+programs. You can use the [`convert.js`](./convert.js) script to convert any
+`*.ch8` file into the required tuple of bytes (NodeJS required):
+
+```bash
+git clone git@github.com:Timendus/thumby-silicon8.git
+cd thumby-silicon8
+./convert.js /path/to/pong.ch8
+```
+
+I plan on having Silicon8 for Thumby find any `*.ch8` files on the Thumby
+filesystem and allow you to run those. But since the filesystem isn't stable yet
+in the emulator, again we will have to be patient until the actual devices get
+shipped.
+
 ## Known issues
 
 The interpretation of CHIP-8, SCHIP and XO-CHIP should be pretty close to the
@@ -54,28 +79,3 @@ auto-detect the right interpreter type. This doesn't always correctly identify
 SCHIP and XO-CHIP programs when they do rely on quirks for those platforms, but
 don't use any of the features of those platforms. You can work around this issue
 by specifying the interpreter type explicitly.
-
-## Installation
-
-While it's not in the "Arcade" yet, you can manually download or copy & paste
-[`main.py`](./main.py) from this repository and load it onto your Thumby using
-the [Thumby IDE](https://tinycircuits.github.io/).
-
-### Getting CHIP-8 games into Silicon8 for Thumby
-
-For the time being, you have to hardcode your ROMs into `main.py`. At the top of
-the file, from line 38 onwards, a dictionary of programs is defined. You can add
-any ROM you like to this dictionary by following the structure of the other
-programs. You can use the [`convert.js`](./convert.js) script to convert any
-`*.ch8` file into the required tuple of bytes (NodeJS required):
-
-```bash
-git clone git@github.com:Timendus/thumby-silicon8.git
-cd thumby-silicon8
-./convert.js /path/to/pong.ch8
-```
-
-I plan on having Silicon8 for Thumby find any `*.ch8` files on the Thumby
-filesystem and allow you to run those. But since the filesystem isn't stable yet
-in the emulator, again we will have to be patient until the actual devices get
-shipped.
