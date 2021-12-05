@@ -198,7 +198,7 @@ programs = (
         )
     },
     {
-        "name": "Rand test",
+        "name": "Random pixels test",
         "type": SCHIP,
         "rom": (
             0x00, 0xff, 0xc0, 0x7f, 0xc1, 0x3f, 0xa2, 0x0c, 0xd0, 0x11, 0x12, 0x02, 0x80
@@ -245,11 +245,15 @@ programs = (
 class Menu:
     def __init__(self):
         self.selected = 0
+        self.scroll = 0
 
     def choose(self, programs):
         self.programs = programs
         while True:
+            self.animate = 0
             self.render()
+            self.lastInputTime = time.ticks_ms()
+            self.lastAnimateTime = time.ticks_ms()
             if self.waitInput():
                 return self.programs[self.selected]
 
@@ -261,17 +265,33 @@ class Menu:
         while True:
             if thumby.buttonU.pressed() and self.selected > 0:
                 self.selected -= 1
+                if self.selected < self.scroll:
+                    self.scroll -= 1
                 return False
             if thumby.buttonD.pressed() and self.selected < len(self.programs)-1:
                 self.selected += 1
+                self.scroll = max(0, self.selected - 3)
                 return False
             if thumby.buttonA.pressed() or thumby.buttonB.pressed():
                 return True
 
+            # Wait for animation to start
+            now = time.ticks_ms()
+            if now - self.lastInputTime > 300 and now - self.lastAnimateTime > 20:
+                nameLength = len(self.programs[self.selected]["name"])
+                if nameLength > 9:
+                    if self.animate > nameLength * 10:
+                        self.animate = 0
+                    else:
+                        self.animate += 1
+                    self.lastAnimateTime = now
+                    self.render()
+
     def printline(self, string, highlight = False):
         if highlight:
             thumby.display.fillRect(0, self.row, thumby.DISPLAY_W, 8, 1)
-            thumby.display.drawText(string, 0, self.row, 0)
+            thumby.display.drawText(string, 0 - self.animate, self.row, 0)
+            thumby.display.drawText(string, len(string) * 10 - self.animate + 1, self.row, 0)
         else:
             thumby.display.drawText(string, 0, self.row)
         self.row += 9
@@ -279,7 +299,7 @@ class Menu:
     def render(self):
         thumby.display.fill(0)
         self.row = 0
-        for i in range(len(self.programs)):
+        for i in range(self.scroll, len(self.programs)):
             self.printline(self.programs[i]["name"], self.selected == i)
         thumby.display.update()
 
