@@ -388,8 +388,7 @@ DEFAULT_STACK_SIZE = 12
 SCHIP_STACK_SIZE   = 16  # According to http://devernay.free.fr/hacks/chip8/schip.txt: "Subroutine nesting is limited to 16 levels"
 
 def playSound(playingPattern, pattern, pitch):
-    # TODO
-    return
+    thumby.audio.play(400, 5000)
 
 def stopSound():
     thumby.audio.stop()
