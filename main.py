@@ -26,17 +26,26 @@ thumby.audio.stop()
 thumby.display.blit(splash, 0, 0, 72, 40)
 thumby.display.update()
 
-# Different ROMs to play with
-
 AUTO   = 0
 VIP    = 1
 SCHIP  = 2
 XOCHIP = 3
 
+keymap = {}
+
+# The catalog of ROMs to play with
+
 programs = (
     {
         "name": "Space invaders",
         "type": SCHIP,
+        "keys": {
+            "up": 5,
+            "left": 4,
+            "right": 6,
+            "a": 5,
+            "b": 5
+        },
         "rom": (
             0x12, 0x25, 0x53, 0x50, 0x41, 0x43, 0x45, 0x20, 0x49, 0x4e, 0x56, 0x41, 0x44, 0x45, 0x52, 0x53, 0x20, 0x30, 0x2e, 0x39, 0x31, 0x20, 0x42, 0x79, 0x20, 0x44, 0x61, 0x76, 0x69, 0x64,
             0x20, 0x57, 0x49, 0x4e, 0x54, 0x45, 0x52, 0x60, 0x00, 0x61, 0x00, 0x62, 0x08, 0xa3, 0xdd, 0xd0, 0x18, 0x71, 0x08, 0xf2, 0x1e, 0x31, 0x20, 0x12, 0x2d, 0x70, 0x08, 0x61, 0x00, 0x30,
@@ -87,6 +96,12 @@ programs = (
     {
         "name": "3D VIP'r Maze",
         "type": VIP,
+        "keys": {
+            "up": 5,
+            "down": 8,
+            "left": 7,
+            "right": 9
+        },
         "rom": (
             0x00, 0xe0, 0xad, 0x25, 0xf0, 0x65, 0x70, 0x01, 0xad, 0x25, 0xf0, 0x55, 0xf0, 0x29, 0x60, 0x1e, 0x61, 0x0a, 0xd0, 0x15, 0x24, 0xf6, 0x00, 0xe0, 0x23, 0x9c, 0x6d, 0x00, 0x6e, 0x00,
             0x24, 0x58, 0x4d, 0x01, 0x12, 0x00, 0x4e, 0x01, 0x12, 0x16, 0x12, 0x1e, 0x6d, 0x00, 0x6e, 0x00, 0xa3, 0x32, 0xf1, 0x55, 0xa2, 0x3a, 0x62, 0xa0, 0x80, 0x21, 0xf1, 0x55, 0x00, 0x00,
@@ -200,6 +215,7 @@ programs = (
     {
         "name": "Random pixels test",
         "type": SCHIP,
+        "keys": {},
         "rom": (
             0x00, 0xff, 0xc0, 0x7f, 0xc1, 0x3f, 0xa2, 0x0c, 0xd0, 0x11, 0x12, 0x02, 0x80
         )
@@ -207,6 +223,7 @@ programs = (
     {
         "name": "Corax test",
         "type": VIP,
+        "keys": {},
         "rom": (
             0x12, 0x4e, 0xea, 0xac, 0xaa, 0xea, 0xce, 0xaa, 0xaa, 0xae, 0xe0, 0xa0, 0xa0, 0xe0, 0xc0, 0x40,
             0x40, 0xe0, 0xe0, 0x20, 0xc0, 0xe0, 0xe0, 0x60, 0x20, 0xe0, 0xa0, 0xe0, 0x20, 0x20, 0x60, 0x40,
@@ -422,12 +439,18 @@ def render(dispWidth, dispHeight, planeBuffer):
 # Get an array of keys that maps Thumby keys to CHIP-8 keys
 def getKeys():
     keyboard = bytearray(16)
-    keyboard[4] = thumby.buttonB.pressed()
-    keyboard[5] = thumby.buttonU.pressed()
-    keyboard[6] = thumby.buttonA.pressed()
-    keyboard[7] = thumby.buttonL.pressed()
-    keyboard[8] = thumby.buttonD.pressed()
-    keyboard[9] = thumby.buttonR.pressed()
+    if "up" in keymap:
+        keyboard[keymap["up"]]    |= thumby.buttonU.pressed()
+    if "down" in keymap:
+        keyboard[keymap["down"]]  |= thumby.buttonD.pressed()
+    if "left" in keymap:
+        keyboard[keymap["left"]]  |= thumby.buttonL.pressed()
+    if "right" in keymap:
+        keyboard[keymap["right"]] |= thumby.buttonR.pressed()
+    if "a" in keymap:
+        keyboard[keymap["a"]]     |= thumby.buttonA.pressed()
+    if "b" in keymap:
+        keyboard[keymap["b"]]     |= thumby.buttonB.pressed()
     return keyboard
 
 # Main Silicon8 class that holds the virtual CPU
@@ -980,6 +1003,7 @@ timer = machine.Timer()
 timer.init(mode=timer.PERIODIC, period=17, callback=cpu.clockTick)
 
 # Start the interpreter
+keymap = program["keys"]
 cpu.reset(program["type"])
 thumby.display.fill(0)
 thumby.display.update()
