@@ -505,7 +505,7 @@ class Silicon8:
     def run(self, program):
         for i in range(0, len(program)):
             self.ram[i + 0x200] = program[i]
-        while True:
+        while self.running:
             self.cycle()
 
     def reset(self, interpreter):
