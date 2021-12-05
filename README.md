@@ -18,6 +18,11 @@ This is my first experiment with MicroPython and the Thumby, so it's probably an
 inefficient mess in the eyes of a "real" MicroPython developer. But this is a
 fun learning project for me 😄
 
+Also, the physical Thumby keychains haven't shipped yet, so I do not yet have
+access to the real hardware. This has so far been developed using the emulator
+in the [Thumby IDE](https://tinycircuits.github.io/). So we have to be patient
+to be able to finalise this project 📭
+
 ## Installation
 
 While it's not in the "Arcade" yet, you can manually download or copy & paste
@@ -30,7 +35,7 @@ For the time being, you have to hardcode your ROMs into `main.py`. At the top of
 the file, from line 38 onwards, a dictionary of programs is defined. You can add
 any ROM you like to this dictionary by following the structure of the other
 programs. You can use the [`convert.js`](./convert.js) script to convert any
-`*.ch8` file into the required tuple of bytes (NodeJS required):
+`*.ch8` file into the right tuple of bytes (NodeJS required):
 
 ```bash
 git clone git@github.com:Timendus/thumby-silicon8.git
@@ -46,36 +51,42 @@ shipped.
 ## Known issues
 
 The interpretation of CHIP-8, SCHIP and XO-CHIP should be pretty close to the
-originals. However, there are a few issues to be aware of.
-
-### Missing instructions
-
-The SCHIP/XO-CHIP scroll instructions have yet to be ported.
-
-Also, sound doesn't work at all yet.
-
-### Speed
-
-This interpreter is not particularly fast in the Thumby emulator. I'm hoping
-it's a little better on the actual hardware. If you have ideas or suggestions on
-how to boost the speed, please let me know. An issue or pull request on this
-repository will get my attention.
+originals. However, there are a few issues to be aware of. If you find issues
+that are not described below, please [file an
+issue](https://github.com/Timendus/thumby-silicon8/issues/new).
 
 ### Display limitations
 
 Due to the small screen size and the limited colours of the Thumby, Silicon8 for
 Thumby is currently limited to `lowres` mode (64x32 pixels) in monochrome. If
 you use `hires` mode, the central 72x40 pixels will be shown and the rest
-discarded. When using XO-CHIP's four colour mode, only plane 1 will be rendered
-to the screen.
+discarded, which doesn't make for great gameplay. When using XO-CHIP's four
+colour mode, only plane 1 will be rendered to the screen.
 
 I have some ideas on how to improve this in the future, but I will need to play
-with the physical hardware first to be able to determine their feasibility. And since the Thumby keychains haven't shipped yet, we have to be patient 📭
+with the physical hardware first to see if those ideas are feasible.
+
+### Sound limitations
+
+The Thumby has a very simple speaker. The current Thumby library does not expose
+this speaker in a more complicated way than setting a frequency and a duty
+cycle. You can, however, bypass the library and talk to the pin directly.
+Supporting the full XO-CHIP audio capabilities on this low a level will be a bit
+of a chore, that I have not yet felt like doing 😄🎶
+
+### Speed
+
+This interpreter is not particularly fast in the Thumby emulator. I'm hoping
+it's a little better on the actual hardware. There's probably a lot to win in
+simplifying the sprite drawing function, I'll look at that when I refactor all
+the display stuff. If you have any other ideas or suggestions on how to boost
+the speed, please let me know. An issue or pull request on this repository will
+get my attention.
 
 ### Type "AUTO"
 
 Like the original Silicon8, Silicon8 for Thumby has a mode "AUTO" that tries to
 auto-detect the right interpreter type. This doesn't always correctly identify
 SCHIP and XO-CHIP programs when they do rely on quirks for those platforms, but
-don't use any of the features of those platforms. You can work around this issue
-by specifying the interpreter type explicitly.
+don't use any of the features of those platforms. You can easily work around
+this issue by specifying the interpreter type explicitly.
