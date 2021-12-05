@@ -761,13 +761,11 @@ class Silicon8:
     def machineCall(self, op, n):
         check = op & 0xFFF0
     	if check == 0x00C0:
-            # TODO
-    		# self.scrollDown(n)
+    		self.scrollDown(n)
     		self.bumpSpecType(SCHIP)
     		return
     	elif check == 0x00D0:
-            # TODO
-    		# self.scrollUp(n)
+    		self.scrollUp(n)
     		self.bumpSpecType(XOCHIP)
     		return
 
@@ -779,12 +777,10 @@ class Silicon8:
             self.sp += 1
             self.pc = self.stack[self.s(self.sp)]
         elif op == 0x00FB:
-            # TODO
-    		# self.scrollRight()
+    		self.scrollRight()
     		self.bumpSpecType(SCHIP)
     	elif op == 0x00FC:
-            # TODO
-    		# self.scrollLeft()
+    		self.scrollLeft()
     		self.bumpSpecType(SCHIP)
     	elif op == 0x00FD:
     		# "Exit" interpreter. Will just halt in our implementation
@@ -895,7 +891,45 @@ class Silicon8:
             self.planeBuffer[i] = self.planeBuffer[i] & planes
         self.SD = True
 
-    # TODO: scroll instructions
+    def scrollDown(n):
+        offset = self.DispWidth * n
+        for i in range(self.DispWidth * self.DispHeight, 0, -1):
+            j = i - 1
+            if j > offset:
+                pixel = self.planeBuffer[j - offset] & self.plane
+            else:
+                pixel = 0
+            self.planeBuffer[j] = self.planeBuffer[j] & (self.plane ^ 0xFF) | pixel
+        self.SD = True
+
+    def scrollUp(n):
+        offset = self.DispWidth * n
+        for i in range(self.DispWidth * self.DispHeight):
+            if i + offset > self.DispWidth * self.DispHeight:
+                pixel = self.planeBuffer[i + offset] & self.plane
+            else:
+                pixel = 0
+            self.planeBuffer[i] = self.planeBuffer[i] & (self.plane ^ 0xFF) | pixel
+        self.SD = True
+
+    def scrollLeft():
+        for i in range(self.DispWidth * self.DispHeight):
+            if i % self.DispWidth < self.DispWidth - 4:
+                pixel = self.planeBuffer[i + 4] & self.plane
+            else:
+                pixel = 0
+            self.planeBuffer[i] = self.planeBuffer[i] & (self.plane ^ 0xFF) | pixel
+        self.SD = True
+
+    def scrollRight():
+        for i in range(self.DispWidth * self.DispHeight, 0, -1):
+            j = i - 1
+            if j % self.DispWidth >= 4:
+                pixel = self.planeBuffer[j - 4] & self.plane
+            else:
+                pixel = 0
+            self.planeBuffer[j] = self.planeBuffer[j] & (self.plane ^ 0xFF) | pixel
+        self.SD = True
 
     def draw(self, x, y, n):
         if self.waitForInterrupt():
