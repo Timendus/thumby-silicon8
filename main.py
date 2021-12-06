@@ -1049,12 +1049,8 @@ class Silicon8:
             return
 
     	# Get real sprite position & height
-    	xPos = self.v[x]
-    	yPos = self.v[y]
-    	while xPos >= self.DispWidth:
-    		xPos -= self.DispWidth
-    	while yPos >= self.DispHeight:
-    		yPos -= self.DispHeight
+    	xPos = self.v[x] % self.DispWidth
+    	yPos = self.v[y] % self.DispHeight
         height = n
         if height == 0:
             height = 16
