@@ -1001,7 +1001,7 @@ class Silicon8:
             self.planeBuffer[i] = self.planeBuffer[i] & planes
         self.SD = True
 
-    def scrollDown(n):
+    def scrollDown(self, n):
         offset = self.DispWidth * n
         for i in range(self.DispWidth * self.DispHeight, 0, -1):
             j = i - 1
@@ -1012,7 +1012,7 @@ class Silicon8:
             self.planeBuffer[j] = self.planeBuffer[j] & (self.plane ^ 0xFF) | pixel
         self.SD = True
 
-    def scrollUp(n):
+    def scrollUp(self, n):
         offset = self.DispWidth * n
         for i in range(self.DispWidth * self.DispHeight):
             if i + offset > self.DispWidth * self.DispHeight:
@@ -1022,7 +1022,7 @@ class Silicon8:
             self.planeBuffer[i] = self.planeBuffer[i] & (self.plane ^ 0xFF) | pixel
         self.SD = True
 
-    def scrollLeft():
+    def scrollLeft(self):
         for i in range(self.DispWidth * self.DispHeight):
             if i % self.DispWidth < self.DispWidth - 4:
                 pixel = self.planeBuffer[i + 4] & self.plane
@@ -1031,7 +1031,7 @@ class Silicon8:
             self.planeBuffer[i] = self.planeBuffer[i] & (self.plane ^ 0xFF) | pixel
         self.SD = True
 
-    def scrollRight():
+    def scrollRight(self):
         for i in range(self.DispWidth * self.DispHeight, 0, -1):
             j = i - 1
             if j % self.DispWidth >= 4:
