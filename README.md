@@ -1,5 +1,9 @@
 # Silicon8 for Thumby
 
+![The Silicon8 for Thumby splash screen](./pictures/emu-splash.png) ![The Silicon8 for Thumby menu system](./pictures/emu-menu.png)
+
+![Gameplay of the game PONG](./pictures/emu-pong.png) ![Gameplay of the game Space Invaders](./pictures/emu-space.png)
+
 [Silicon8](https://github.com/Timendus/silicon8) is an interpreter for CHIP-8,
 SCHIP and XO-CHIP that was initially built in Go, and targeted mainly at
 WebAssembly. This version of it is a port to MicroPython for the
