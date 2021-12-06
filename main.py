@@ -8,7 +8,7 @@ import gc
 import random
 import thumby
 import machine
-from framebuf import FrameBuffer, MONO_VLSB
+from framebuf import FrameBuffer, MONO_HLSB
 
 gc.enable()
 # machine.freq(125000000)
@@ -438,45 +438,15 @@ def stopSound():
 
 # Render Silicon8 planeBuffer to Thumby display as best as you can
 def render(dispWidth, dispHeight, planeBuffer):
-    if dispWidth <= thumby.DISPLAY_W:
-        minX = 0
-        maxX = dispWidth
-        screenX = int((thumby.DISPLAY_W - dispWidth) / 2)
-    else:
-        minX = int((dispWidth - thumby.DISPLAY_W) / 2)
-        maxX = int(dispWidth - (dispWidth - thumby.DISPLAY_W) / 2)
-        screenX = 0
-
-    if dispHeight <= thumby.DISPLAY_H:
-        minY = 0
-        maxY = dispHeight
-        screenY = int((thumby.DISPLAY_H - dispHeight) / 2)
-    else:
-        minY = int((dispHeight - thumby.DISPLAY_H) / 2)
-        maxY = int(dispHeight - (dispHeight - thumby.DISPLAY_H) / 2)
-        screenY = 0
-
-    bitmask = 128
-    pointer = 0
-    display = bytearray(9*40)   # 72 / 8 * 40
-    for y in range(minY, maxY, 8):
-        for x in range(minX, maxX):
-            for row in range(7, -1, -1):
-                pixel = planeBuffer[(y + row) * dispWidth + x] # & 1
-                if pixel > 0:
-                    # Set pixel
-                    display[pointer] = display[pointer] | bitmask
-                else:
-                    # Reset pixel
-                    display[pointer] = display[pointer] & (bitmask ^ 0xFF)
-                bitmask = bitmask >> 1
-                if bitmask == 0:
-                    bitmask = 128
-                    pointer += 1
-
-    thumby.display.blit(display, screenX, screenY,
-        min(dispWidth, thumby.DISPLAY_W), min(dispHeight, thumby.DISPLAY_H))
+    thumby.display.display.blit(
+        FrameBuffer(planeBuffer[0], dispWidth, dispHeight, MONO_HLSB),
+        int((thumby.DISPLAY_W - dispWidth) / 2),
+        int((thumby.DISPLAY_H - dispHeight) / 2),
+        min(dispWidth, thumby.DISPLAY_W),
+        min(dispHeight, thumby.DISPLAY_H)
+    )
     thumby.display.update()
+    return
 
 # Get an array of keys that maps Thumby keys to CHIP-8 keys
 def getKeys():
@@ -659,7 +629,10 @@ class Silicon8:
         # Initialize memory
         self.initDisplay(64, 32, 1)
         self.stack = [0] * self.stackSize
-        self.planeBuffer = bytearray(128*64)
+        self.planeBuffer = [
+            bytearray(int(128*64/8)),
+            bytearray(int(128*64/8))
+        ]
         self.ram = bytearray(self.RAMSize)
 
         # Initialize internal variables
@@ -902,12 +875,12 @@ class Silicon8:
     	elif op == 0x00FE:
     		# Set normal screen resolution
     		self.initDisplay(64, 32, self.planes)
-    		self.clearPlanes(0)
+    		self.clearPlanes(3)
     		self.bumpSpecType(SCHIP)
     	elif op == 0x00FF:
     		# Set extended screen resolution
     		self.initDisplay(128, 64, self.planes)
-    		self.clearPlanes(0)
+    		self.clearPlanes(3)
     		self.bumpSpecType(SCHIP)
     	else:
             print("RCA 1802 assembly calls not supported at address", self.pc-2, "opcode", op)
@@ -997,14 +970,21 @@ class Silicon8:
     # Display magic
 
     def clearScreen(self):
-        self.clearPlanes(self.plane ^ 0xFF)
+        self.clearPlanes(self.plane)
 
     def clearPlanes(self, planes):
-        for i in range(len(self.planeBuffer)):
-            self.planeBuffer[i] = self.planeBuffer[i] & planes
+        # TODO: clean this up
+        if (planes & 1) > 0:
+            for i in range(len(self.planeBuffer[0])):
+                self.planeBuffer[0][i] = 0
+        if (planes & 2) > 0:
+            for i in range(len(self.planeBuffer[0])):
+                self.planeBuffer[1][i] = 0
         self.SD = True
 
     def scrollDown(self, n):
+        # TODO
+        return
         offset = self.DispWidth * n
         for i in range(self.DispWidth * self.DispHeight, 0, -1):
             j = i - 1
@@ -1016,6 +996,8 @@ class Silicon8:
         self.SD = True
 
     def scrollUp(self, n):
+        # TODO
+        return
         offset = self.DispWidth * n
         for i in range(self.DispWidth * self.DispHeight):
             if i + offset > self.DispWidth * self.DispHeight:
@@ -1026,6 +1008,8 @@ class Silicon8:
         self.SD = True
 
     def scrollLeft(self):
+        # TODO
+        return
         for i in range(self.DispWidth * self.DispHeight):
             if i % self.DispWidth < self.DispWidth - 4:
                 pixel = self.planeBuffer[i + 4] & self.plane
@@ -1035,6 +1019,8 @@ class Silicon8:
         self.SD = True
 
     def scrollRight(self):
+        # TODO
+        return
         for i in range(self.DispWidth * self.DispHeight, 0, -1):
             j = i - 1
             if j % self.DispWidth >= 4:
@@ -1053,6 +1039,7 @@ class Silicon8:
     	yPos = self.v[y] % self.DispHeight
         height = n
         if height == 0:
+            self.bumpSpecType(SCHIP)
             height = 16
 
         # Do the actual drawing
@@ -1060,30 +1047,30 @@ class Silicon8:
         ramPointer = self.i
         plane = 1
 
+        # TODO: fix non-aligned sprites
+
         while plane < 4:                     # Go through two planes
             if (plane & self.plane) != 0:    # If this plane is currently selected
-                planeBufPointer = yPos*self.DispWidth + xPos
-                for i in range(0, height):   # Draw N lines
+                planeBufPointer = int(yPos*self.DispWidth/8 + xPos / 8)
+                for i in range(height):      # Draw N lines
                     # Does this line fall off the bottom of the screen?
-                    if planeBufPointer > self.DispWidth * self.DispHeight:
+                    if planeBufPointer > int(self.DispWidth * self.DispHeight / 8):
                         if self.clipQuirk:
                             continue
                         else:
-                            planeBufPointer -= self.DispWidth * self.DispHeight
-                    lineErases = self.drawLine(ramPointer, planeBufPointer, plane)
+                            planeBufPointer -= int(self.DispWidth * self.DispHeight / 8)
+                    lineErases = self.xorLine(ramPointer, planeBufPointer, plane)
                     erases = erases or lineErases
                     ramPointer += 1
-                    if n == 0:
-                      lineErases = self.drawLine(ramPointer, planeBufPointer+8, plane)
+                    if height == 16:
+                      lineErases = self.xorLine(ramPointer, planeBufPointer+8, plane)
                       erases = erases or lineErases
                       ramPointer += 1
-                    planeBufPointer += self.DispWidth
+                    planeBufPointer += int(self.DispWidth / 8)
             plane = plane << 1
 
         self.SD = True
         self.setFlag(erases)
-        if n == 0:
-        	self.bumpSpecType(SCHIP)
 
     def waitForInterrupt(self):
         if not self.dispQuirk:
@@ -1100,22 +1087,10 @@ class Silicon8:
             self.WaitForInt = 0
             return False
 
-    def drawLine(self, ramPointer, planeBufPointer, plane):
+    def xorLine(self, ramPointer, planeBufPointer, plane):
         pixels = self.ram[self.a(ramPointer)]
-        erases = False
-        bit = 128
-        while bit > 0:
-            if (pixels & bit) != 0:
-                erases = erases or ((self.planeBuffer[planeBufPointer]&plane) != 0)
-                self.planeBuffer[planeBufPointer] ^= plane
-            planeBufPointer += 1
-            # Did we cross the edge of the screen?
-            if (planeBufPointer % self.DispWidth) == 0:
-                if self.clipQuirk:
-                    break
-                else:
-                    planeBufPointer -= self.DispWidth
-            bit = bit >> 1
+        erases = (self.planeBuffer[plane-1][planeBufPointer] & pixels) != 0
+        self.planeBuffer[plane-1][planeBufPointer] ^= pixels
         return erases
 
     def initDisplay(self, width, height, planes):
