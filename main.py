@@ -287,7 +287,8 @@ class Menu:
                 return False
             if thumby.buttonD.pressed() and self.selected < len(self.programs)-1:
                 self.selected += 1
-                self.scroll = max(0, self.selected - 3)
+                if self.selected - 3 > self.scroll:
+                    self.scroll += 1
                 return False
             if thumby.buttonA.pressed() or thumby.buttonB.pressed():
                 return True
@@ -297,7 +298,7 @@ class Menu:
             if now - self.lastInputTime > 300 and now - self.lastAnimateTime > 20:
                 nameLength = len(self.programs[self.selected]["name"])
                 if nameLength > 9:
-                    if self.animate > nameLength * 10:
+                    if self.animate > (nameLength + 2) * 8:
                         self.animate = 0
                     else:
                         self.animate += 1
@@ -308,7 +309,8 @@ class Menu:
         if highlight:
             thumby.display.fillRect(0, self.row, thumby.DISPLAY_W, 8, 1)
             thumby.display.drawText(string, 0 - self.animate, self.row, 0)
-            thumby.display.drawText(string, len(string) * 10 - self.animate + 1, self.row, 0)
+            if len(string) > 9:
+                thumby.display.drawText(string, (len(string) + 2) * 8 - self.animate + 1, self.row, 0)
         else:
             thumby.display.drawText(string, 0, self.row)
         self.row += 9
