@@ -1,7 +1,11 @@
 # Silicon8 for Thumby
 # By Timendus
-
-# This is a (crappy start at a) CHIP-8 interpreter
+#
+# An interpreter for CHIP-8, SCHIP and XO-CHIP in MicroPython for the Thumby
+# playable keychain by TinyCircuits.
+#
+# See https://github.com/Timendus/thumby-silicon8 for more information and
+# licensing information.
 
 import time
 import gc
