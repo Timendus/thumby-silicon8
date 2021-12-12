@@ -13,17 +13,18 @@ from framebuf import FrameBuffer, MONO_HLSB
 gc.enable()
 # machine.freq(125000000)
 
-splash = (
+splash = bytearray([
     0,0,0,0,0,0,0,224,248,60,14,14,7,7,3,3,7,7,14,14,12,0,0,0,0,0,32,32,192,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,224,240,120,28,14,6,6,6,14,28,120,240,224,0,
     0,0,0,0,0,0,0,15,31,56,112,96,96,224,192,192,192,128,128,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,15,30,184,240,224,224,224,240,184,30,15,7,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,3,15,254,248,0,0,196,64,0,0,255,0,0,196,64,0,0,0,128,64,64,64,0,0,0,128,64,64,128,0,0,0,192,64,64,64,128,0,0,0,252,254,15,3,1,0,0,0,1,3,15,254,252,0,
     0,48,112,112,224,224,192,192,192,192,192,192,192,192,224,96,112,56,28,15,7,1,0,0,63,0,0,0,63,0,0,63,0,0,0,15,16,32,32,32,0,0,15,16,32,32,16,15,0,0,63,0,0,0,0,63,0,0,3,7,15,28,56,48,48,48,56,28,15,7,3,0,
     0,60,66,66,66,0,124,16,16,124,0,122,0,124,20,20,8,0,40,84,84,40,0,0,0,66,126,66,0,124,4,4,120,0,62,68,0,56,84,84,88,0,124,8,4,0,124,20,20,8,0,124,8,4,0,56,84,84,88,0,62,68,0,56,84,84,88,0,124,8,4,0
-)
+])
 
 # Stop sound and show splash while we wait ;)
 thumby.audio.stop()
-thumby.display.blit(splash, 0, 0, 72, 40)
+thumby.display.setFPS(0)
+thumby.display.blit(splash, 0, 0, 72, 40, -1, 0, 0)
 thumby.display.update()
 
 AUTO   = 0
@@ -405,8 +406,8 @@ class Menu:
             now = time.ticks_ms()
             if now - self.lastInputTime > 300 and now - self.lastAnimateTime > 20:
                 nameLength = len(self.programs[self.selected]["name"])
-                if nameLength > 9:
-                    if self.animate > (nameLength + 2) * 8:
+                if nameLength > 12:
+                    if self.animate > (nameLength + 2) * 6:
                         self.animate = 0
                     else:
                         self.animate += 1
@@ -415,17 +416,17 @@ class Menu:
 
     def printline(self, string, highlight = False):
         if highlight:
-            thumby.display.fillRect(0, self.row, thumby.DISPLAY_W, 8, 1)
+            thumby.display.drawFilledRectangle(0, self.row - 1, thumby.display.width, 9, 1)
             thumby.display.drawText(string, 0 - self.animate, self.row, 0)
-            if len(string) > 9:
-                thumby.display.drawText(string, (len(string) + 2) * 8 - self.animate + 1, self.row, 0)
+            if len(string) > 12:
+                thumby.display.drawText(string, (len(string) + 2) * 6 - self.animate + 1, self.row, 0)
         else:
-            thumby.display.drawText(string, 0, self.row)
-        self.row += 9
+            thumby.display.drawText(string, 0, self.row, 1)
+        self.row += 8
 
     def render(self):
         thumby.display.fill(0)
-        self.row = 0
+        self.row = 1
         for i in range(self.scroll, len(self.programs)):
             self.printline(self.programs[i]["name"], self.selected == i)
         thumby.display.update()
@@ -436,14 +437,28 @@ def playSound(playingPattern, pattern, pitch):
 def stopSound():
     thumby.audio.stop()
 
+@micropython.viper
+def convertHLSBtoVLSB(inputBuf, width:int, height:int, outputBuf):
+    inputPtr = ptr8(inputBuf)
+    outputPtr = ptr8(outputBuf)
+    for x in range(width):
+        for y in range(height):
+            if inputPtr[(y * width + x) >> 3] & (128 >> (x & 0x07)) > 0:
+                outputPtr[(y >> 3) * width + x] |= 1 << (y & 0x07)
+            else:
+                outputPtr[(y >> 3) * width + x] &= 0xff ^ (1 << (y & 0x07))
+
 # Render Silicon8 planeBuffer to Thumby display as best as you can
+displayBuffer = bytearray((thumby.display.width * thumby.display.height) >> 3)
 def render(dispWidth, dispHeight, planeBuffer):
-    thumby.display.display.blit(
-        planeBuffer[0],
-        int((thumby.DISPLAY_W - dispWidth) / 2),
-        int((thumby.DISPLAY_H - dispHeight) / 2),
-        min(dispWidth, thumby.DISPLAY_W),
-        min(dispHeight, thumby.DISPLAY_H)
+    convertHLSBtoVLSB(planeBuffer[0], dispWidth, dispHeight, displayBuffer)
+    thumby.display.blit(
+        displayBuffer,
+        int((thumby.display.width - dispWidth) / 2),
+        int((thumby.display.height - dispHeight) / 2),
+        min(dispWidth, thumby.display.width),
+        min(dispHeight, thumby.display.height),
+        -1, 0, 0
     )
     thumby.display.update()
     return
@@ -571,10 +586,11 @@ class AccurateDisplay:
             self.waitForInt = 2
 
     def getFrameBuffers(self):
-        return [
-            FrameBuffer(self.buffer[0], 128, 64, MONO_HLSB),
-            FrameBuffer(self.buffer[1], 128, 64, MONO_HLSB)
-        ]
+        return self.buffer
+        # return [
+        #     FrameBuffer(self.buffer[0], 128, 64, MONO_HLSB),
+        #     FrameBuffer(self.buffer[1], 128, 64, MONO_HLSB)
+        # ]
 
     # Clears currently selected plane
     def clear(self):
