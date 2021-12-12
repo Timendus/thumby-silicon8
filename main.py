@@ -27,10 +27,10 @@ thumby.display.setFPS(0)
 thumby.display.blit(splash, 0, 0, 72, 40, -1, 0, 0)
 thumby.display.update()
 
-AUTO   = 0
-VIP    = 1
-SCHIP  = 2
-XOCHIP = 3
+AUTO   = const(0)
+VIP    = const(1)
+SCHIP  = const(2)
+XOCHIP = const(3)
 
 keymap = {}
 
@@ -728,10 +728,10 @@ class Silicon8:
 
     # Some static constants
 
-    VIP_SCHIP_RAM_SIZE = 3583 + 512
-    XOCHIP_RAM_SIZE    = 65023 + 512
-    DEFAULT_STACK_SIZE = 12
-    SCHIP_STACK_SIZE   = 16  # According to http://devernay.free.fr/hacks/chip8/schip.txt: "Subroutine nesting is limited to 16 levels"
+    VIP_SCHIP_RAM_SIZE = const(3583 + 512)
+    XOCHIP_RAM_SIZE    = const(65023 + 512)
+    DEFAULT_STACK_SIZE = const(12)
+    SCHIP_STACK_SIZE   = const(16)  # According to http://devernay.free.fr/hacks/chip8/schip.txt: "Subroutine nesting is limited to 16 levels"
 
     # Font definitions for the interpreter built in fonts
 
