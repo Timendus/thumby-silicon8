@@ -14,9 +14,16 @@ class AccurateDisplay:
         self.selectedPlane = 1
         self.dirty = True
         self.waitForInt = 0
-        self.buffer = [
-            bytearray(int(128*64/8)),
-            bytearray(int(128*64/8))
+        self.initBuffers()
+
+    def initBuffers(self):
+        self.buffers = [
+            bytearray(int(self.width*self.height/8)),
+            bytearray(int(self.width*self.height/8))
+        ]
+        self.frameBuffers = [
+            FrameBuffer(self.buffers[0], self.width, self.height, MONO_HLSB),
+            FrameBuffer(self.buffers[1], self.width, self.height, MONO_HLSB)
         ]
 
     # Called by 60Hz interrupt timer for dispQuirk
@@ -25,11 +32,7 @@ class AccurateDisplay:
             self.waitForInt = 2
 
     def getFrameBuffers(self):
-        return self.buffer
-        # return [
-        #     FrameBuffer(self.buffer[0], 128, 64, MONO_HLSB),
-        #     FrameBuffer(self.buffer[1], 128, 64, MONO_HLSB)
-        # ]
+        return self.frameBuffers
 
     # Clears currently selected plane
     def clear(self):
@@ -37,10 +40,10 @@ class AccurateDisplay:
 
     # Clears given planes
     def clearPlanes(self, planes):
-        for i in range(len(self.buffer)):
+        for i in range(len(self.buffers)):
             if (i+1) & planes > 0:
-                for j in range(len(self.buffer[i])):
-                    self.buffer[i][j] = 0
+                for j in range(len(self.buffers[i])):
+                    self.buffers[i][j] = 0
         self.dirty = True
 
     def scrollDown(self, n):
@@ -150,15 +153,17 @@ class AccurateDisplay:
             return False
 
     def xorLine(self, pixels, planeBufPointer, plane):
-        current = self.buffer[plane-1][planeBufPointer]
+        if planeBufPointer >= len(self.buffers[plane-1]):
+            return False
+        current = self.buffers[plane-1][planeBufPointer]
         erases = (current & pixels) != 0
-        self.buffer[plane-1][planeBufPointer] = current ^ pixels
+        self.buffers[plane-1][planeBufPointer] = current ^ pixels
         return erases
 
     def setResolution(self, width, height):
         self.width = width
         self.height = height
-        self.clearPlanes(3)
+        self.initBuffers()
 
 
 

@@ -1,4 +1,7 @@
 import thumby
+from framebuf import FrameBuffer, MONO_VLSB
+
+#### Sound
 
 def playSound(playingPattern, pattern, pitch):
     thumby.audio.play(400, 5000)
@@ -6,32 +9,29 @@ def playSound(playingPattern, pattern, pitch):
 def stopSound():
     thumby.audio.stop()
 
-@micropython.viper
-def convertHLSBtoVLSB(inputBuf, width:int, height:int, outputBuf):
-    inputPtr = ptr8(inputBuf)
-    outputPtr = ptr8(outputBuf)
-    for x in range(width):
-        for y in range(height):
-            if inputPtr[(y * width + x) >> 3] & (128 >> (x & 0x07)) > 0:
-                outputPtr[(y >> 3) * width + x] |= 1 << (y & 0x07)
-            else:
-                outputPtr[(y >> 3) * width + x] &= 0xff ^ (1 << (y & 0x07))
 
-# Render Silicon8 planeBuffer to Thumby display as best as you can
-displayBuffer = bytearray((thumby.display.width * thumby.display.height) >> 3)
-def render(dispWidth, dispHeight, planeBuffer):
-    convertHLSBtoVLSB(planeBuffer[0], dispWidth, dispHeight, displayBuffer)
-    thumby.display.blit(
-        displayBuffer,
-        int((thumby.display.width - dispWidth) / 2),
-        int((thumby.display.height - dispHeight) / 2),
+#### Display
+
+dispBuffer = FrameBuffer(
+    thumby.display.display.buffer,
+    thumby.display.width,
+    thumby.display.height,
+    MONO_VLSB
+)
+
+@micropython.viper
+def render(dispWidth:int, dispHeight:int, planeBuffer):
+    dispBuffer.blit(
+        planeBuffer[0],
+        (int(thumby.display.width) - dispWidth) >> 1,
+        (int(thumby.display.height) - dispHeight) >> 1,
         min(dispWidth, thumby.display.width),
-        min(dispHeight, thumby.display.height),
-        -1, 0, 0
+        min(dispHeight, thumby.display.height)
     )
     thumby.display.update()
-    return
 
+
+#### Key input
 
 keymap = {}
 
