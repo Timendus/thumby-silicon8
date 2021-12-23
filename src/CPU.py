@@ -1,11 +1,11 @@
 import random
-from Display import AccurateDisplay
-from Types import VIP, AUTO, SCHIP, XOCHIP
-from ThumbyStuff import playSound, stopSound, render, getKeys
+import thumbyinterface
+import types
+from display import AccurateDisplay
 
 # Main Silicon8 class that holds the virtual CPU
 # Pretty much a direct port of https://github.com/Timendus/silicon8 to MicroPython
-class Silicon8:
+class CPU:
 
     # Some static constants
 
@@ -102,23 +102,23 @@ class Silicon8:
         if self.st > 0:
         	if not self.playing:
         		self.playing = True
-        		playSound(self.playingPattern, self.pattern, self.pitch)
+        		thumbyinterface.playSound(self.playingPattern, self.pattern, self.pitch)
         		self.audioDirty = False
         	self.st -= 1
         else:
         	if self.playing:
         		self.playing = False
         		self.audioDirty = False
-        		stopSound()
+        		thumbyinterface.stopSound()
 
         # Trigger audio updates if dirty
         if self.audioDirty:
-        	playSound(self.playingPattern, self.pattern, self.pitch)
+        	thumbyinterface.playSound(self.playingPattern, self.pattern, self.pitch)
         	self.audioDirty = False
 
         # Render display if dirty
         if self.display.dirty:
-        	render(self.display.width, self.display.height, self.display.getFrameBuffers())
+        	thumbyinterface.render(self.display.width, self.display.height, self.display.getFrameBuffers())
         	self.display.dirty = False
 
         # Register display redraw interrupt for dispQuirk
@@ -134,25 +134,25 @@ class Silicon8:
     def reset(self, interpreter):
         self.stop()
 
-        if interpreter != AUTO:
+        if interpreter != types.AUTO:
             self.specType = interpreter
             self.typeFixed = True
         else:
-            self.specType = VIP
+            self.specType = types.VIP
             self.typeFixed = False
 
-        if interpreter == VIP:
-        	self.RAMSize = Silicon8.VIP_SCHIP_RAM_SIZE
-    		self.stackSize = Silicon8.DEFAULT_STACK_SIZE
-    	elif interpreter == SCHIP:
-    		self.RAMSize = Silicon8.VIP_SCHIP_RAM_SIZE
-    		self.stackSize = Silicon8.SCHIP_STACK_SIZE
-    	elif interpreter == XOCHIP:
-    		self.RAMSize = Silicon8.XOCHIP_RAM_SIZE
-    		self.stackSize = Silicon8.DEFAULT_STACK_SIZE
-    	elif interpreter == AUTO: # Takes maximum sizes, determines limits at runtime
-    		self.RAMSize = Silicon8.XOCHIP_RAM_SIZE
-    		self.stackSize = Silicon8.SCHIP_STACK_SIZE
+        if interpreter == types.VIP:
+        	self.RAMSize = CPU.VIP_SCHIP_RAM_SIZE
+    		self.stackSize = CPU.DEFAULT_STACK_SIZE
+    	elif interpreter == types.SCHIP:
+    		self.RAMSize = CPU.VIP_SCHIP_RAM_SIZE
+    		self.stackSize = CPU.SCHIP_STACK_SIZE
+    	elif interpreter == types.XOCHIP:
+    		self.RAMSize = CPU.XOCHIP_RAM_SIZE
+    		self.stackSize = CPU.DEFAULT_STACK_SIZE
+    	elif interpreter == types.AUTO: # Takes maximum sizes, determines limits at runtime
+    		self.RAMSize = CPU.XOCHIP_RAM_SIZE
+    		self.stackSize = CPU.SCHIP_STACK_SIZE
 
         # Initialize registers
         self.pc = 0x200
@@ -187,12 +187,12 @@ class Silicon8:
         self.start()
 
     def setQuirks(self):
-        self.shiftQuirk = self.specType == SCHIP
-        self.jumpQuirk = self.specType == SCHIP
-        self.memQuirk = self.specType != SCHIP
-        self.vfQuirk = self.specType == VIP
-        self.clipQuirk = self.specType != XOCHIP
-        self.dispQuirk = self.specType == VIP
+        self.shiftQuirk = self.specType == types.SCHIP
+        self.jumpQuirk = self.specType == types.SCHIP
+        self.memQuirk = self.specType != types.SCHIP
+        self.vfQuirk = self.specType == types.VIP
+        self.clipQuirk = self.specType != types.XOCHIP
+        self.dispQuirk = self.specType == types.VIP
 
     @micropython.native
     def bumpSpecType(self, newType):
@@ -201,9 +201,9 @@ class Silicon8:
         if newType > self.specType:
             self.specType = newType
             self.setQuirks()
-            if newType == SCHIP:
+            if newType == types.SCHIP:
                 print("Auto-upgraded interpreter to SCHIP")
-            elif newType == XOCHIP:
+            elif newType == types.XOCHIP:
                 print("Auto-upgraded interpreter to XOCHIP")
 
     # Run the CPU for one cycle and return control
@@ -245,10 +245,10 @@ class Silicon8:
             self.display.draw(x, y, n)
         elif check == 0xE000:
             if nn == 0x9E:
-                if getKeys()[self.v[x]]:
+                if thumbyinterface.getKeys()[self.v[x]]:
                     self.skipNextInstruction()
             elif nn == 0xA1:
-                if not getKeys()[self.v[x]]:
+                if not thumbyinterface.getKeys()[self.v[x]]:
                     self.skipNextInstruction()
         elif check == 0xF000:
             if nn < 0x29:
@@ -284,12 +284,12 @@ class Silicon8:
                 # Store range of registers to memory
                 for i in range(x, y + 1):
                     self.ram[self.a(self.i+(i-x))] = self.v[i]
-                self.bumpSpecType(XOCHIP)
+                self.bumpSpecType(types.XOCHIP)
             elif n == 3:
                 # Load range of registers from memory
                 for i in range(x, y + 1):
                     self.v[i] = self.ram[self.a(self.i+(i-x))]
-                self.bumpSpecType(XOCHIP)
+                self.bumpSpecType(types.XOCHIP)
             else:
                 if self.v[x] == self.v[y]:
                     self.skipNextInstruction()
@@ -306,27 +306,27 @@ class Silicon8:
             # Set i register to 16-bit value
             self.i = self.ram[self.a(self.pc)]<<8 | self.ram[self.a(self.pc+1)]
             self.pc += 2
-            self.bumpSpecType(XOCHIP)
+            self.bumpSpecType(types.XOCHIP)
         elif nn == 0x01:
             # Enable the second plane if it hasn't been enabled yet
             self.display.numPlanes = 2
             # Select plane X
             self.display.selectedPlane = x
-            self.bumpSpecType(XOCHIP)
+            self.bumpSpecType(types.XOCHIP)
         elif nn == 0x02:
             # XO-Chip: Load 16 bytes of audio buffer from (i)
             for i in range(0, 16):
                 self.pattern[i] = self.ram[self.a(self.i+i)]
             self.playingPattern = True
             self.audioDirty = True
-            self.bumpSpecType(XOCHIP)
+            self.bumpSpecType(types.XOCHIP)
         elif nn == 0x07:
             # Set register to value of delay timer
 			self.v[x] = self.dt
         elif nn == 0x0A:
             # Wait for keypress and return key in vX
             if cpu.waitForKey:
-                keyboard = getKeys()
+                keyboard = thumbyinterface.getKeys()
                 for i in range(len(keyboard)):
                     if keyboard[i]:
                         self.v[x] = i
@@ -335,7 +335,7 @@ class Silicon8:
                 self.pc -= 2
             else:
                 self.pc -= 2
-                keyboard = getKeys()
+                keyboard = thumbyinterface.getKeys()
                 for i in range(len(keyboard)):
                     if keyboard[i]:
                         return
@@ -358,7 +358,7 @@ class Silicon8:
         elif nn == 0x30:
             # Set i register to large font data
             self.i = self.v[x]*10 + 80
-            self.bumpSpecType(SCHIP)
+            self.bumpSpecType(types.SCHIP)
         elif nn == 0x33:
             # Binary coded decimal from vX to address in i
             self.ram[self.a(self.i+0)] = int(self.v[x] / 100)
@@ -369,7 +369,7 @@ class Silicon8:
             self.pitch = 4000 * pow(2, (self.v[x]-64)/48)
             self.playingPattern = True
             self.audioDirty = True
-            self.bumpSpecType(XOCHIP)
+            self.bumpSpecType(types.XOCHIP)
         elif nn == 0x55:
             # Store registers to memory (regular VIP/SCHIP)
             for i in range(0, x + 1):
@@ -386,23 +386,23 @@ class Silicon8:
             # Store registers to "user flags" (SCHIP)
             for i in range(0, x + 1):
                 self.userFlags[i] = self.v[i]
-            self.bumpSpecType(SCHIP)
+            self.bumpSpecType(types.SCHIP)
         elif nn == 0x85:
             # Load registers from "user flags" (SCHIP)
             for i in range(0, x + 1):
                 self.v[i] = self.userFlags[i]
-            self.bumpSpecType(SCHIP)
+            self.bumpSpecType(types.SCHIP)
 
     @micropython.native
     def machineCall(self, op, n):
         check = op & 0xFFF0
     	if check == 0x00C0:
     		self.display.scrollDown(n)
-    		self.bumpSpecType(SCHIP)
+    		self.bumpSpecType(types.SCHIP)
     		return
     	elif check == 0x00D0:
     		self.display.scrollUp(n)
-    		self.bumpSpecType(XOCHIP)
+    		self.bumpSpecType(types.XOCHIP)
     		return
 
         if op == 0x00E0:
@@ -414,22 +414,22 @@ class Silicon8:
             self.pc = self.stack[self.s(self.sp)]
         elif op == 0x00FB:
     		self.display.scrollRight()
-    		self.bumpSpecType(SCHIP)
+    		self.bumpSpecType(types.SCHIP)
     	elif op == 0x00FC:
     		self.display.scrollLeft()
-    		self.bumpSpecType(SCHIP)
+    		self.bumpSpecType(types.SCHIP)
     	elif op == 0x00FD:
     		# "Exit" interpreter. Will just halt in our implementation
     		self.running = false
-    		self.bumpSpecType(SCHIP)
+    		self.bumpSpecType(types.SCHIP)
     	elif op == 0x00FE:
     		# Set normal screen resolution
     		self.display.setResolution(64, 32)
-    		self.bumpSpecType(SCHIP)
+    		self.bumpSpecType(types.SCHIP)
     	elif op == 0x00FF:
     		# Set extended screen resolution
     		self.display.setResolution(128, 64)
-    		self.bumpSpecType(SCHIP)
+    		self.bumpSpecType(types.SCHIP)
     	else:
             print("RCA 1802 assembly calls not supported at address", self.pc-2, "opcode", op)
             self.running = false
@@ -501,8 +501,8 @@ class Silicon8:
         if address >= self.RAMSize:
             print("Program attempted to access RAM outsize of memory")
             return 0
-        if address >= Silicon8.VIP_SCHIP_RAM_SIZE:
-            self.bumpSpecType(XOCHIP)
+        if address >= CPU.VIP_SCHIP_RAM_SIZE:
+            self.bumpSpecType(types.XOCHIP)
         return address
 
     @micropython.native
@@ -510,8 +510,8 @@ class Silicon8:
         if address >= self.stackSize:
             print("Program attempted to access invalid stack memory")
             return 0
-        if self.stackSize == Silicon8.SCHIP_STACK_SIZE and address < (Silicon8.SCHIP_STACK_SIZE-Silicon8.DEFAULT_STACK_SIZE):
-            self.bumpSpecType(SCHIP)
+        if self.stackSize == CPU.SCHIP_STACK_SIZE and address < (CPU.SCHIP_STACK_SIZE-CPU.DEFAULT_STACK_SIZE):
+            self.bumpSpecType(types.SCHIP)
         return address
 
     @micropython.native
@@ -521,10 +521,10 @@ class Silicon8:
             self.v[0xF] = 1
 
     def loadFont(self):
-        if self.specType == SCHIP or self.specType == XOCHIP:
-            font = Silicon8.schipFont
+        if self.specType == types.SCHIP or self.specType == types.XOCHIP:
+            font = CPU.schipFont
         else:
-            font = Silicon8.chip8Font
+            font = CPU.chip8Font
 
         for i in range(len(font)):
             self.ram[i] = font[i];

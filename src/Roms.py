@@ -1,11 +1,10 @@
 # The catalog of ROMs to play with
+import types
 
-from Types import SCHIP, VIP
-
-programs = (
+catalog = (
     {
         "name": "Pong",
-        "type": SCHIP,
+        "type": types.SCHIP,
         "keys": {
             "up": 1,
             "down": 4
@@ -24,7 +23,7 @@ programs = (
     },
     {
         "name": "Tetris (Fran Dachille, 1991)",
-        "type": SCHIP,
+        "type": types.SCHIP,
         "keys": {
             "left": 5,
             "right": 6,
@@ -53,7 +52,7 @@ programs = (
     },
     {
         "name": "Snake",
-        "type": SCHIP,
+        "type": types.SCHIP,
         "keys": {
             "up": 5,
             "down": 8,
@@ -113,7 +112,7 @@ programs = (
     },
     {
         "name": "Space invaders (David Winter, 199?)",
-        "type": SCHIP,
+        "type": types.SCHIP,
         "keys": {
             "up": 5,
             "left": 4,
@@ -170,7 +169,7 @@ programs = (
     },
     {
         "name": "3D VIP'r Maze (Timendus, 2021)",
-        "type": VIP,
+        "type": types.VIP,
         "keys": {
             "up": 5,
             "down": 8,
@@ -289,7 +288,7 @@ programs = (
     },
     {
         "name": "Random pixels test",
-        "type": SCHIP,
+        "type": types.SCHIP,
         "keys": {},
         "rom": (
             0x00, 0xff, 0xc0, 0x7f, 0xc1, 0x3f, 0xa2, 0x0c, 0xd0, 0x11, 0x12, 0x02, 0x80
@@ -297,7 +296,7 @@ programs = (
     },
     {
         "name": "Corax89 test",
-        "type": VIP,
+        "type": types.VIP,
         "keys": {},
         "rom": (
             0x12, 0x4e, 0xea, 0xac, 0xaa, 0xea, 0xce, 0xaa, 0xaa, 0xae, 0xe0, 0xa0, 0xa0, 0xe0, 0xc0, 0x40,

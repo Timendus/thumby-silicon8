@@ -7,15 +7,7 @@
 # See https://github.com/Timendus/thumby-silicon8 for more information and
 # licensing information.
 
-import time
-import gc
 import thumby
-import machine
-from framebuf import FrameBuffer, MONO_HLSB
-from ThumbyStuff import setKeys
-
-gc.enable()
-# machine.freq(125000000)
 
 splash = bytearray([
     0,0,0,0,0,0,0,224,248,60,14,14,7,7,3,3,7,7,14,14,12,0,0,0,0,0,32,32,192,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,224,240,120,28,14,6,6,6,14,28,120,240,224,0,
@@ -31,31 +23,34 @@ thumby.display.setFPS(0)
 thumby.display.blit(splash, 0, 0, 72, 40, -1, 0, 0)
 thumby.display.update()
 
-AUTO   = const(0)
-VIP    = const(1)
-SCHIP  = const(2)
-XOCHIP = const(3)
+import time
+import gc
+import machine
+import thumbyinterface
+import roms
+import cpu
+import menu
 
-from Roms import programs
-from Menu import Menu
+gc.enable()
+# machine.freq(125000000)
 
-import Display
-from CPU import Silicon8
-
-# Actual program start:
-
-time.sleep_ms(1000)
-program = Menu().choose(programs)
+# Ask user to choose a ROM
+program = menu.Menu().choose(roms.catalog)
 
 # Instantiate interpreter
-cpu = Silicon8()
+cpu = cpu.CPU()
 
 # Set up 60Hz interrupt handler
 timer = machine.Timer()
 timer.init(mode=timer.PERIODIC, period=17, callback=cpu.clockTick)
 
+# Collect garbage ~every other clock
+# def garbageTruck(t):
+#     gc.collect()
+# timer.init(mode=timer.PERIODIC, period=33, callback=garbageTruck)
+
 # Start the interpreter
-setKeys(program["keys"])
+thumbyinterface.setKeys(program["keys"])
 cpu.reset(program["type"])
 thumby.display.fill(0)
 thumby.display.update()
