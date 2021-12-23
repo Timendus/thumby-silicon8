@@ -16,6 +16,7 @@ class AccurateDisplay:
         self.waitForInt = 0
         self.initBuffers()
 
+    @micropython.native
     def initBuffers(self):
         self.buffers = [
             bytearray(int(self.width*self.height/8)),
@@ -27,18 +28,22 @@ class AccurateDisplay:
         ]
 
     # Called by 60Hz interrupt timer for dispQuirk
+    @micropython.native
     def interrupt(self):
         if self.waitForInt == 1:
             self.waitForInt = 2
 
+    @micropython.native
     def getFrameBuffers(self):
         return self.frameBuffers
 
     # Clears currently selected plane
+    @micropython.native
     def clear(self):
         self.clearPlanes(self.selectedPlane)
 
     # Clears given planes
+    @micropython.native
     def clearPlanes(self, planes):
         for i in range(len(self.buffers)):
             if (i+1) & planes > 0:
@@ -46,6 +51,7 @@ class AccurateDisplay:
                     self.buffers[i][j] = 0
         self.dirty = True
 
+    @micropython.native
     def scrollDown(self, n):
         # TODO
         return
@@ -59,6 +65,7 @@ class AccurateDisplay:
             self.planeBuffer[j] = self.planeBuffer[j] & (self.plane ^ 0xFF) | pixel
         self.SD = True
 
+    @micropython.native
     def scrollUp(self, n):
         # TODO
         return
@@ -71,6 +78,7 @@ class AccurateDisplay:
             self.planeBuffer[i] = self.planeBuffer[i] & (self.plane ^ 0xFF) | pixel
         self.SD = True
 
+    @micropython.native
     def scrollLeft(self):
         # TODO
         return
@@ -82,6 +90,7 @@ class AccurateDisplay:
             self.planeBuffer[i] = self.planeBuffer[i] & (self.plane ^ 0xFF) | pixel
         self.SD = True
 
+    @micropython.native
     def scrollRight(self):
         # TODO
         return
@@ -94,6 +103,7 @@ class AccurateDisplay:
             self.planeBuffer[j] = self.planeBuffer[j] & (self.plane ^ 0xFF) | pixel
         self.SD = True
 
+    @micropython.native
     def draw(self, x, y, n):
         if self.waitForInterrupt():
             return
@@ -111,32 +121,35 @@ class AccurateDisplay:
         ramPointer = self.cpu.i
         plane = 1
 
-        # TODO: fix weird erase bug
-
         while plane < 4:                            # Go through two planes
             if (plane & self.selectedPlane) != 0:   # If this plane is currently selected
-                planeBufPointer = int(yPos*self.width/8 + xPos / 8)
+                bufferPointer = int((yPos*self.width + xPos) / 8)
                 byteOffset = xPos % 8
                 for i in range(height):             # Draw N lines
                     # Does this line fall off the bottom of the screen?
-                    if planeBufPointer > int(self.width * self.height / 8):
+                    if bufferPointer >= int(self.width * self.height / 8):
                         if self.cpu.clipQuirk:
                             continue
                         else:
-                            planeBufPointer -= int(self.width * self.height / 8)
+                            bufferPointer -= int(self.width * self.height / 8)
                     pixels = self.cpu.ram[self.cpu.a(ramPointer)]
-                    erases = erases or self.xorLine(pixels >> byteOffset, planeBufPointer, plane) or self.xorLine(pixels << 8 - byteOffset, planeBufPointer+1, plane)
+                    erases = self.xorLine(pixels >> byteOffset, bufferPointer, plane) or erases
+                    if byteOffset > 0:
+                        erases = self.xorLine(pixels << 8 - byteOffset, bufferPointer+1, plane) or erases
                     ramPointer += 1
                     if height == 16:
                         pixels = self.cpu.ram[self.cpu.a(ramPointer)]
-                        erases = erases or self.xorLine(pixels >> byteOffset, planeBufPointer+8, plane) or self.xorLine(pixels << 8 - byteOffset, planeBufPointer+9, plane)
+                        erases = self.xorLine(pixels >> byteOffset, bufferPointer+1, plane) or erases
+                        if byteOffset > 0:
+                            erases = self.xorLine(pixels << 8 - byteOffset, bufferPointer+2, plane) or erases
                         ramPointer += 1
-                    planeBufPointer += int(self.width / 8)
+                    bufferPointer += int(self.width / 8)
             plane = plane << 1
 
         self.dirty = True
         self.cpu.v[0xF] = 1 if erases else 0 # Set collision flag
 
+    @micropython.native
     def waitForInterrupt(self):
         if not self.cpu.dispQuirk:
             return False
@@ -152,14 +165,16 @@ class AccurateDisplay:
             self.waitForInt = 0
             return False
 
-    def xorLine(self, pixels, planeBufPointer, plane):
-        if planeBufPointer >= len(self.buffers[plane-1]):
+    @micropython.native
+    def xorLine(self, pixels, bufferPointer, plane):
+        if bufferPointer >= len(self.buffers[plane-1]):
             return False
-        current = self.buffers[plane-1][planeBufPointer]
+        current = self.buffers[plane-1][bufferPointer]
         erases = (current & pixels) != 0
-        self.buffers[plane-1][planeBufPointer] = current ^ pixels
+        self.buffers[plane-1][bufferPointer] = current ^ pixels
         return erases
 
+    @micropython.native
     def setResolution(self, width, height):
         self.width = width
         self.height = height
