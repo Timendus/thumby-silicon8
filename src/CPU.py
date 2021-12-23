@@ -90,6 +90,7 @@ class Silicon8:
     def stop(self):
     	self.running = False
 
+    @micropython.native
     def clockTick(self, t):
         if not self.running:
             return
@@ -123,6 +124,7 @@ class Silicon8:
         # Register display redraw interrupt for dispQuirk
         self.display.interrupt()
 
+    @micropython.native
     def run(self, program):
         for i in range(0, len(program)):
             self.ram[i + 0x200] = program[i]
@@ -192,6 +194,7 @@ class Silicon8:
         self.clipQuirk = self.specType != XOCHIP
         self.dispQuirk = self.specType == VIP
 
+    @micropython.native
     def bumpSpecType(self, newType):
         if self.typeFixed:
             return
@@ -204,6 +207,7 @@ class Silicon8:
                 print("Auto-upgraded interpreter to XOCHIP")
 
     # Run the CPU for one cycle and return control
+    @micropython.native
     def cycle(self):
         if not self.running:
             return
@@ -218,7 +222,43 @@ class Silicon8:
         self.pc += 2
 
         check = op & 0xF000
-        if check == 0:
+        if check < 0x8000:
+            self.opcodes0to7(check, op, x, y, n, nn, nnn)
+        elif check == 0x8000:
+            self.maths(x, y, n)
+        elif check == 0x9000:
+            if self.v[x] != self.v[y]:
+                self.skipNextInstruction()
+        elif check == 0xA000:
+            # Set i
+            self.i = nnn
+        elif check == 0xB000:
+            # Jump to i + "v0"
+            if self.jumpQuirk:
+                self.pc = nnn + self.v[x]
+            else:
+                self.pc = nnn + self.v[0]
+        elif check == 0xC000:
+            # Set register to random number
+            self.v[x] = random.randint(0, 255) & nn
+        elif check == 0xD000:
+            self.display.draw(x, y, n)
+        elif check == 0xE000:
+            if nn == 0x9E:
+                if getKeys()[self.v[x]]:
+                    self.skipNextInstruction()
+            elif nn == 0xA1:
+                if not getKeys()[self.v[x]]:
+                    self.skipNextInstruction()
+        elif check == 0xF000:
+            if nn < 0x29:
+                self.opcodesFX1EandBelow(nn, x)
+            else:
+                self.opcodesFX29andUp(nn, x)
+
+    # @micropython.native
+    def opcodes0to7(self, check, op, x, y, n, nn, nnn):
+        if check == 0x0000:
             self.machineCall(op, n)
         elif check == 0x1000:
             # Jump
@@ -259,121 +299,101 @@ class Silicon8:
         elif check == 0x7000:
             # Add to register
             self.v[x] += nn
-        elif check == 0x8000:
-            self.maths(x, y, n)
-        elif check == 0x9000:
-            if self.v[x] != self.v[y]:
-                self.skipNextInstruction()
-        elif check == 0xA000:
-            # Set i
-            self.i = nnn
-        elif check == 0xB000:
-            # Jump to i + "v0"
-            if self.jumpQuirk:
-                self.pc = nnn + self.v[x]
-            else:
-                self.pc = nnn + self.v[0]
-        elif check == 0xC000:
-            # Set register to random number
-            self.v[x] = random.randint(0, 255) & nn
-        elif check == 0xD000:
-            self.display.draw(x, y, n)
-        elif check == 0xE000:
-            if nn == 0x9E:
-                if getKeys()[self.v[x]]:
-                    self.skipNextInstruction()
-            elif nn == 0xA1:
-                if not getKeys()[self.v[x]]:
-                    self.skipNextInstruction()
-        elif check == 0xF000:
-            if nn == 0x00:
-                # Set i register to 16-bit value
-                self.i = self.ram[self.a(self.pc)]<<8 | self.ram[self.a(self.pc+1)]
-                self.pc += 2
-                self.bumpSpecType(XOCHIP)
-            elif nn == 0x01:
-                # Enable the second plane if it hasn't been enabled yet
-                self.display.numPlanes = 2
-                # Select plane X
-                self.display.selectedPlane = x
-                self.bumpSpecType(XOCHIP)
-            elif nn == 0x02:
-                # XO-Chip: Load 16 bytes of audio buffer from (i)
-                for i in range(0, 16):
-                    self.pattern[i] = self.ram[self.a(self.i+i)]
-                self.playingPattern = True
-                self.audioDirty = True
-                self.bumpSpecType(XOCHIP)
-            elif nn == 0x07:
-                # Set register to value of delay timer
-    			self.v[x] = self.dt
-            elif nn == 0x0A:
-                # Wait for keypress and return key in vX
-                if cpu.waitForKey:
-                    keyboard = getKeys()
-                    for i in range(len(keyboard)):
-                        if keyboard[i]:
-                            self.v[x] = i
-                            self.waitForKey = False
-                            return
-                    self.pc -= 2
-                else:
-                    self.pc -= 2
-                    keyboard = getKeys()
-                    for i in range(len(keyboard)):
-                        if keyboard[i]:
-                            return
-                    self.waitForKey = True
-            elif nn == 0x15:
-                # Set delay timer to value in vX
-                self.dt = self.v[x]
-            elif nn == 0x18:
-                # Set sound timer to value in vX
-                self.st = self.v[x]
-            elif nn == 0x1E:
-                # Add vX to i register
-                self.i += self.v[x] & 0xFFFF
-            elif nn == 0x29:
-                # Set i register to font data
-                self.i = self.v[x] * 5
-            elif nn == 0x30:
-                # Set i register to large font data
-                self.i = self.v[x]*10 + 80
-                self.bumpSpecType(SCHIP)
-            elif nn == 0x33:
-                # Binary coded decimal from vX to address in i
-                self.ram[self.a(self.i+0)] = int(self.v[x] / 100)
-                self.ram[self.a(self.i+1)] = int(self.v[x] % 100 / 10)
-                self.ram[self.a(self.i+2)] = self.v[x] % 10
-            elif nn == 0x3A:
-                # XO-Chip: Change pitch of audio pattern
-                self.pitch = 4000 * pow(2, (self.v[x]-64)/48)
-                self.playingPattern = True
-                self.audioDirty = True
-                self.bumpSpecType(XOCHIP)
-            elif nn == 0x55:
-                # Store registers to memory (regular VIP/SCHIP)
-                for i in range(0, x + 1):
-                    self.ram[self.a(self.i + i)] = self.v[i]
-                if self.memQuirk:
-                    self.i = (self.i + x + 1) & 0xFFFF
-            elif nn == 0x65:
-                # Load registers from memory (regular VIP/SCHIP)
-                for i in range(0, x + 1):
-                    self.v[i] = self.ram[self.a(self.i + i)]
-                if self.memQuirk:
-                    self.i = (self.i + x + 1) & 0xFFFF
-            elif nn == 0x75:
-                # Store registers to "user flags" (SCHIP)
-                for i in range(0, x + 1):
-                    self.userFlags[i] = self.v[i]
-                self.bumpSpecType(SCHIP)
-            elif nn == 0x85:
-                # Load registers from "user flags" (SCHIP)
-                for i in range(0, x + 1):
-                    self.v[i] = self.userFlags[i]
-                self.bumpSpecType(SCHIP)
 
+    @micropython.native
+    def opcodesFX1EandBelow(self, nn, x):
+        if nn == 0x00:
+            # Set i register to 16-bit value
+            self.i = self.ram[self.a(self.pc)]<<8 | self.ram[self.a(self.pc+1)]
+            self.pc += 2
+            self.bumpSpecType(XOCHIP)
+        elif nn == 0x01:
+            # Enable the second plane if it hasn't been enabled yet
+            self.display.numPlanes = 2
+            # Select plane X
+            self.display.selectedPlane = x
+            self.bumpSpecType(XOCHIP)
+        elif nn == 0x02:
+            # XO-Chip: Load 16 bytes of audio buffer from (i)
+            for i in range(0, 16):
+                self.pattern[i] = self.ram[self.a(self.i+i)]
+            self.playingPattern = True
+            self.audioDirty = True
+            self.bumpSpecType(XOCHIP)
+        elif nn == 0x07:
+            # Set register to value of delay timer
+			self.v[x] = self.dt
+        elif nn == 0x0A:
+            # Wait for keypress and return key in vX
+            if cpu.waitForKey:
+                keyboard = getKeys()
+                for i in range(len(keyboard)):
+                    if keyboard[i]:
+                        self.v[x] = i
+                        self.waitForKey = False
+                        return
+                self.pc -= 2
+            else:
+                self.pc -= 2
+                keyboard = getKeys()
+                for i in range(len(keyboard)):
+                    if keyboard[i]:
+                        return
+                self.waitForKey = True
+        elif nn == 0x15:
+            # Set delay timer to value in vX
+            self.dt = self.v[x]
+        elif nn == 0x18:
+            # Set sound timer to value in vX
+            self.st = self.v[x]
+        elif nn == 0x1E:
+            # Add vX to i register
+            self.i += self.v[x] & 0xFFFF
+
+    @micropython.native
+    def opcodesFX29andUp(self, nn, x):
+        if nn == 0x29:
+            # Set i register to font data
+            self.i = self.v[x] * 5
+        elif nn == 0x30:
+            # Set i register to large font data
+            self.i = self.v[x]*10 + 80
+            self.bumpSpecType(SCHIP)
+        elif nn == 0x33:
+            # Binary coded decimal from vX to address in i
+            self.ram[self.a(self.i+0)] = int(self.v[x] / 100)
+            self.ram[self.a(self.i+1)] = int(self.v[x] % 100 / 10)
+            self.ram[self.a(self.i+2)] = self.v[x] % 10
+        elif nn == 0x3A:
+            # XO-Chip: Change pitch of audio pattern
+            self.pitch = 4000 * pow(2, (self.v[x]-64)/48)
+            self.playingPattern = True
+            self.audioDirty = True
+            self.bumpSpecType(XOCHIP)
+        elif nn == 0x55:
+            # Store registers to memory (regular VIP/SCHIP)
+            for i in range(0, x + 1):
+                self.ram[self.a(self.i + i)] = self.v[i]
+            if self.memQuirk:
+                self.i = (self.i + x + 1) & 0xFFFF
+        elif nn == 0x65:
+            # Load registers from memory (regular VIP/SCHIP)
+            for i in range(0, x + 1):
+                self.v[i] = self.ram[self.a(self.i + i)]
+            if self.memQuirk:
+                self.i = (self.i + x + 1) & 0xFFFF
+        elif nn == 0x75:
+            # Store registers to "user flags" (SCHIP)
+            for i in range(0, x + 1):
+                self.userFlags[i] = self.v[i]
+            self.bumpSpecType(SCHIP)
+        elif nn == 0x85:
+            # Load registers from "user flags" (SCHIP)
+            for i in range(0, x + 1):
+                self.v[i] = self.userFlags[i]
+            self.bumpSpecType(SCHIP)
+
+    @micropython.native
     def machineCall(self, op, n):
         check = op & 0xFFF0
     	if check == 0x00C0:
@@ -414,6 +434,7 @@ class Silicon8:
             print("RCA 1802 assembly calls not supported at address", self.pc-2, "opcode", op)
             self.running = false
 
+    @micropython.native
     def maths(self, x, y, n):
     	if n == 0x0:
     		self.v[x] = self.v[y]
@@ -467,6 +488,7 @@ class Silicon8:
     		self.v[x] = self.v[y] << 1
     		self.setFlag(flag)
 
+    @micropython.native
     def skipNextInstruction(self):
         nextInstruction = self.ram[self.a(self.pc)]<<8 | self.ram[self.a(self.pc+1)]
     	if nextInstruction == 0xF000:
@@ -474,6 +496,7 @@ class Silicon8:
         else:
             self.pc += 2
 
+    @micropython.native
     def a(self, address):
         if address >= self.RAMSize:
             print("Program attempted to access RAM outsize of memory")
@@ -482,6 +505,7 @@ class Silicon8:
             self.bumpSpecType(XOCHIP)
         return address
 
+    @micropython.native
     def s(self, address):
         if address >= self.stackSize:
             print("Program attempted to access invalid stack memory")
@@ -490,6 +514,7 @@ class Silicon8:
             self.bumpSpecType(SCHIP)
         return address
 
+    @micropython.native
     def setFlag(self, comparison):
         self.v[0xF] = 0
         if comparison:
