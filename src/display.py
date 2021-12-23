@@ -53,30 +53,24 @@ class AccurateDisplay:
 
     @micropython.native
     def scrollDown(self, n):
-        # TODO
-        return
-        offset = self.DispWidth * n
-        for i in range(self.DispWidth * self.DispHeight, 0, -1):
-            j = i - 1
-            if j > offset:
-                pixel = self.planeBuffer[j - offset] & self.plane
-            else:
-                pixel = 0
-            self.planeBuffer[j] = self.planeBuffer[j] & (self.plane ^ 0xFF) | pixel
-        self.SD = True
+        offset = int(self.width * n / 8)
+        for plane in range(1, 2):
+            if (plane & self.selectedPlane) == 0:
+                continue
+            for i in range(len(self.buffers[plane-1]) - 1, 0, -1):
+                self.buffers[plane-1][i] = self.buffers[plane-1][i - offset] if i > offset else 0
+            self.dirty = True
 
     @micropython.native
     def scrollUp(self, n):
-        # TODO
-        return
-        offset = self.DispWidth * n
-        for i in range(self.DispWidth * self.DispHeight):
-            if i + offset > self.DispWidth * self.DispHeight:
-                pixel = self.planeBuffer[i + offset] & self.plane
-            else:
-                pixel = 0
-            self.planeBuffer[i] = self.planeBuffer[i] & (self.plane ^ 0xFF) | pixel
-        self.SD = True
+        offset = int(self.width * n / 8)
+        for plane in range(1, 2):
+            if (plane & self.selectedPlane) == 0:
+                continue
+            maxIndex = len(self.buffers[plane-1]) - 1
+            for i in range(maxIndex):
+                self.buffers[plane-1][i] = self.buffers[plane-1][i + offset] if i + offset < maxIndex else 0
+            self.dirty = True
 
     @micropython.native
     def scrollLeft(self):
@@ -119,32 +113,31 @@ class AccurateDisplay:
         # Do the actual drawing
         erases = False
         ramPointer = self.cpu.i
-        plane = 1
 
-        while plane < 4:                            # Go through two planes
-            if (plane & self.selectedPlane) != 0:   # If this plane is currently selected
-                bufferPointer = int((yPos*self.width + xPos) / 8)
-                byteOffset = xPos % 8
-                for i in range(height):             # Draw N lines
-                    # Does this line fall off the bottom of the screen?
-                    if bufferPointer >= int(self.width * self.height / 8):
-                        if self.cpu.clipQuirk:
-                            continue
-                        else:
-                            bufferPointer -= int(self.width * self.height / 8)
+        for plane in range(1, 2):                   # Go through both planes
+            if (plane & self.selectedPlane) == 0:   # Only manipulate if this plane is currently selected
+                continue
+            bufferPointer = int((yPos*self.width + xPos) / 8)
+            byteOffset = xPos % 8
+            for i in range(height):                 # Draw N lines
+                # Does this line fall off the bottom of the screen?
+                if bufferPointer >= int(self.width * self.height / 8):
+                    if self.cpu.clipQuirk:
+                        continue
+                    else:
+                        bufferPointer -= int(self.width * self.height / 8)
+                pixels = self.cpu.ram[self.cpu.a(ramPointer)]
+                erases = self.xorLine(pixels >> byteOffset, bufferPointer, plane) or erases
+                if byteOffset > 0:
+                    erases = self.xorLine(pixels << 8 - byteOffset, bufferPointer+1, plane) or erases
+                ramPointer += 1
+                if height == 16:
                     pixels = self.cpu.ram[self.cpu.a(ramPointer)]
-                    erases = self.xorLine(pixels >> byteOffset, bufferPointer, plane) or erases
+                    erases = self.xorLine(pixels >> byteOffset, bufferPointer+1, plane) or erases
                     if byteOffset > 0:
-                        erases = self.xorLine(pixels << 8 - byteOffset, bufferPointer+1, plane) or erases
+                        erases = self.xorLine(pixels << 8 - byteOffset, bufferPointer+2, plane) or erases
                     ramPointer += 1
-                    if height == 16:
-                        pixels = self.cpu.ram[self.cpu.a(ramPointer)]
-                        erases = self.xorLine(pixels >> byteOffset, bufferPointer+1, plane) or erases
-                        if byteOffset > 0:
-                            erases = self.xorLine(pixels << 8 - byteOffset, bufferPointer+2, plane) or erases
-                        ramPointer += 1
-                    bufferPointer += int(self.width / 8)
-            plane = plane << 1
+                bufferPointer += int(self.width / 8)
 
         self.dirty = True
         self.cpu.v[0xF] = 1 if erases else 0 # Set collision flag
