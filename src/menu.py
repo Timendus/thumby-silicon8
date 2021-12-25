@@ -50,11 +50,11 @@ class Menu:
     def printline(self, string, highlight = False):
         if highlight:
             thumby.display.drawFilledRectangle(0, self.row - 1, thumby.display.width, 9, 1)
-            thumby.display.drawText(string, 0 - self.animate, self.row, 0)
+            thumby.display.drawText(string, 1 - self.animate, self.row, 0)
             if len(string) > 12:
-                thumby.display.drawText(string, (len(string) + 2) * 6 - self.animate + 1, self.row, 0)
+                thumby.display.drawText(string, (len(string) + 2) * 6 - self.animate + 2, self.row, 0)
         else:
-            thumby.display.drawText(string, 0, self.row, 1)
+            thumby.display.drawText(string, 1, self.row, 1)
         self.row += 8
 
     def render(self):
