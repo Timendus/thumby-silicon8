@@ -55,48 +55,47 @@ class AccurateDisplay:
     @micropython.native
     def scrollDown(self, n):
         offset = int(self.width * n / 8)
-        for plane in range(1, 2):
+        for plane in range(1, 3):
             if (plane & self.selectedPlane) == 0:
                 continue
-            for i in range(len(self.buffers[plane-1]) - 1, 0, -1):
+            for i in range(len(self.buffers[plane-1]) - 1, -1, -1):
                 self.buffers[plane-1][i] = self.buffers[plane-1][i - offset] if i > offset else 0
             self.dirty = True
 
     @micropython.native
     def scrollUp(self, n):
         offset = int(self.width * n / 8)
-        for plane in range(1, 2):
+        for plane in range(1, 3):
             if (plane & self.selectedPlane) == 0:
                 continue
-            maxIndex = len(self.buffers[plane-1]) - 1
+            maxIndex = len(self.buffers[plane-1])
             for i in range(maxIndex):
                 self.buffers[plane-1][i] = self.buffers[plane-1][i + offset] if i + offset < maxIndex else 0
             self.dirty = True
 
     @micropython.native
     def scrollLeft(self):
-        # TODO
-        return
-        for i in range(self.DispWidth * self.DispHeight):
-            if i % self.DispWidth < self.DispWidth - 4:
-                pixel = self.planeBuffer[i + 4] & self.plane
-            else:
-                pixel = 0
-            self.planeBuffer[i] = self.planeBuffer[i] & (self.plane ^ 0xFF) | pixel
-        self.SD = True
+        # TODO: scrolling wraps around. Needs to be fixed.
+        for plane in range(1, 3):
+            if (plane & self.selectedPlane) == 0:
+                continue
+            for i in range(len(self.buffers[plane-1])):
+                right = self.buffers[plane-1][i+1] >> 4 if (i+1) % self.width != 0 else 0
+                left = self.buffers[plane-1][i] << 4
+                self.buffers[plane-1][i] = left | right
+            self.dirty = True
 
     @micropython.native
     def scrollRight(self):
-        # TODO
-        return
-        for i in range(self.DispWidth * self.DispHeight, 0, -1):
-            j = i - 1
-            if j % self.DispWidth >= 4:
-                pixel = self.planeBuffer[j - 4] & self.plane
-            else:
-                pixel = 0
-            self.planeBuffer[j] = self.planeBuffer[j] & (self.plane ^ 0xFF) | pixel
-        self.SD = True
+        # TODO: scrolling wraps around. Needs to be fixed.
+        for plane in range(1, 3):
+            if (plane & self.selectedPlane) == 0:
+                continue
+            for i in range(len(self.buffers[plane-1]) - 1, -1, -1):
+                left = self.buffers[plane-1][i-1] << 4 if i % self.width != 0 else 0
+                right = self.buffers[plane-1][i] >> 4
+                self.buffers[plane-1][i] = left | right
+            self.dirty = True
 
     @micropython.native
     def draw(self, x, y, n):
@@ -115,7 +114,7 @@ class AccurateDisplay:
         erases = False
         ramPointer = self.cpu.i
 
-        for plane in range(1, 2):                   # Go through both planes
+        for plane in range(1, 3):                   # Go through both planes
             if (plane & self.selectedPlane) == 0:   # Only manipulate if this plane is currently selected
                 continue
             bufferPointer = int((yPos*self.width + xPos) / 8)
