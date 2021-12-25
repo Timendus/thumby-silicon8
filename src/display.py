@@ -1,4 +1,5 @@
 from framebuf import FrameBuffer, MONO_HLSB
+import types
 
 # Representation of the CHIP-8 display. Supports two planes and two screen
 # sizes. Implementation in MicroPython of all the operations, which isn't the
@@ -107,7 +108,7 @@ class AccurateDisplay:
     	yPos = self.cpu.v[y] % self.height
         height = n
         if height == 0:
-            self.cpu.bumpSpecType(SCHIP)
+            self.cpu.bumpSpecType(types.SCHIP)
             height = 16
 
         # Do the actual drawing
@@ -234,7 +235,7 @@ class FastDisplay:
     	yPos = self.cpu.v[y] % self.height
         height = n
         if height == 0:
-            self.cpu.bumpSpecType(SCHIP)
+            self.cpu.bumpSpecType(types.SCHIP)
             height = 16
 
         # TODO: 16 by 16 sprites
