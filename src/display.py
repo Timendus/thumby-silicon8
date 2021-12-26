@@ -75,24 +75,22 @@ class AccurateDisplay:
 
     @micropython.native
     def scrollLeft(self):
-        # TODO: scrolling wraps around. Needs to be fixed.
         for plane in range(1, 3):
             if (plane & self.selectedPlane) == 0:
                 continue
             for i in range(len(self.buffers[plane-1])):
-                right = self.buffers[plane-1][i+1] >> 4 if (i+1) % self.width != 0 else 0
+                right = self.buffers[plane-1][i+1] >> 4 if (i+1) % self.width / 8 != 0 else 0
                 left = self.buffers[plane-1][i] << 4
                 self.buffers[plane-1][i] = left | right
             self.dirty = True
 
     @micropython.native
     def scrollRight(self):
-        # TODO: scrolling wraps around. Needs to be fixed.
         for plane in range(1, 3):
             if (plane & self.selectedPlane) == 0:
                 continue
             for i in range(len(self.buffers[plane-1]) - 1, -1, -1):
-                left = self.buffers[plane-1][i-1] << 4 if i % self.width != 0 else 0
+                left = self.buffers[plane-1][i-1] << 4 if i % self.width / 8 != 0 else 0
                 right = self.buffers[plane-1][i] >> 4
                 self.buffers[plane-1][i] = left | right
             self.dirty = True
