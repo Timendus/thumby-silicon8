@@ -325,7 +325,7 @@ class CPU:
 			self.v[x] = self.dt
         elif nn == 0x0A:
             # Wait for keypress and return key in vX
-            if cpu.waitForKey:
+            if self.waitForKey:
                 keyboard = thumbyinterface.getKeys()
                 for i in range(len(keyboard)):
                     if keyboard[i]:

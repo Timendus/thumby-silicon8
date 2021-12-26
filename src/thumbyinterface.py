@@ -3,9 +3,11 @@ from framebuf import FrameBuffer, MONO_VLSB
 
 #### Sound
 
+@micropython.native
 def playSound(playingPattern, pattern, pitch):
     thumby.audio.play(400, 5000)
 
+@micropython.native
 def stopSound():
     thumby.audio.stop()
 
@@ -36,9 +38,11 @@ def render(dispWidth:int, dispHeight:int, planeBuffer):
 keymap = {}
 
 def setKeys(keys):
+    global keymap
     keymap = keys
 
 # Get an array of keys that maps Thumby keys to CHIP-8 keys
+@micropython.native
 def getKeys():
     keyboard = bytearray(16)
     if "up" in keymap:
