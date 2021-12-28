@@ -195,7 +195,7 @@ class CPU:
         self.memQuirk = self.specType != types.SCHIP
         self.vfQuirk = self.specType == types.VIP
         self.clipQuirk = self.specType != types.XOCHIP
-        self.dispQuirk = self.specType == types.VIP
+        self.dispQuirk = False # self.specType == types.VIP
 
     @micropython.native
     def bumpSpecType(self, newType):
