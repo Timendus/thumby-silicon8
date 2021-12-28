@@ -1,5 +1,5 @@
 {
-  "Tetris (Fran Dachille, 1991)",
+  "name": "Tetris (Fran Dachille, 1991)",
   "type": "SCHIP",
   "keys": {
       "left": 5,
