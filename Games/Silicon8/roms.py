@@ -2,7 +2,7 @@ import types
 import os
 import ujson
 
-ROM_PATH = '/chip'
+ROM_PATH = '/CHIP-8 roms'
 
 def catalog():
     files = os.listdir(ROM_PATH)
