@@ -35,7 +35,7 @@ gc.enable()
 # machine.freq(125000000)
 
 # Ask user to choose a ROM
-program = menu.Menu().choose(roms.catalog)
+program = menu.Menu().choose(roms.catalog())
 
 # Instantiate interpreter
 cpu = cpu.CPU()
@@ -54,4 +54,4 @@ thumbyinterface.setKeys(program["keys"])
 cpu.reset(program["type"])
 thumby.display.fill(0)
 thumby.display.update()
-cpu.run(program["rom"])
+cpu.run(roms.load(program))
