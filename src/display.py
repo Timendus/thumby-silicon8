@@ -34,10 +34,6 @@ class AccurateDisplay:
         if self.waitForInt == 1:
             self.waitForInt = 2
 
-    @micropython.native
-    def getFrameBuffers(self):
-        return self.frameBuffers
-
     # Clears currently selected plane
     @micropython.native
     def clear(self):
