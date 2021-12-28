@@ -1,0 +1,10 @@
+{
+  "name": "3D VIP'r Maze (Timendus, 2021)",
+  "type": "SCHIP",
+  "keys": {
+      "up": 5,
+      "down": 8,
+      "left": 7,
+      "right": 9
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Pong",
+  "type": "SCHIP",
+  "keys": {
+      "up": 1,
+      "down": 4
+  }
+}

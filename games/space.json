@@ -1,0 +1,11 @@
+{
+  "name": "Space invaders (David Winter, 199?)",
+  "type": "SCHIP",
+  "keys": {
+      "up": 5,
+      "left": 4,
+      "right": 6,
+      "a": 5,
+      "b": 5
+  }
+}
