@@ -35,7 +35,10 @@ gc.enable()
 # machine.freq(125000000)
 
 # Ask user to choose a ROM
-program = menu.Menu().choose(roms.catalog())
+while True:
+    program = menu.Menu().choose(roms.catalog())
+    if menu.Confirm().choose(program):
+        break
 
 # Instantiate interpreter
 cpu = cpu.CPU()

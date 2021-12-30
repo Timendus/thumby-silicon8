@@ -18,6 +18,7 @@ def catalog():
         if file.endswith('.ch8'):
             defaults = {
                 "name": file.replace('.ch8',''),
+                "desc": "No additional information found",
                 "type": types.AUTO,
                 "keys": {
                     "up": 5,

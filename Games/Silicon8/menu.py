@@ -63,3 +63,63 @@ class Menu:
         for i in range(self.scroll, len(self.programs)):
             self.printline(self.programs[i]["name"], self.selected == i)
         thumby.display.update()
+
+class Confirm:
+    def __init__(self):
+        self.selected = 0
+        self.scroll = 0
+
+    def choose(self, program):
+        self.program = program
+        while True:
+            self.render()
+            if self.waitInput():
+                return self.selected == 0
+
+    def waitInput(self):
+        while thumby.buttonU.pressed() or thumby.buttonD.pressed() or thumby.buttonA.pressed() or thumby.buttonB.pressed() or thumby.buttonL.pressed() or thumby.buttonR.pressed():
+            pass
+
+        while True:
+            if thumby.buttonL.pressed() or thumby.buttonR.pressed():
+                self.selected ^= 1
+                return False
+            if thumby.buttonU.pressed() and self.scroll > 0:
+                self.scroll -= 1
+                return False
+            if thumby.buttonD.pressed() and self.scroll < 100:
+                self.scroll += 1
+                return False
+            if thumby.buttonA.pressed() or thumby.buttonB.pressed():
+                return True
+
+    def render(self):
+        thumby.display.fill(0)
+
+        # Game information
+        totalText = self.program["name"] + '\n\n' + self.program["desc"]
+        self.renderText(totalText)
+
+        # Bottom menu
+        height = 10
+        top = thumby.display.height - height
+        middle = int(thumby.display.width / 2)
+        thumby.display.drawFilledRectangle(0, top, thumby.display.width, height, 1)
+        thumby.display.drawFilledRectangle(self.selected * middle, top + 1, middle, height - 1, 0)
+        thumby.display.drawText("BACK", 6, top + 2, self.selected ^ 1)
+        thumby.display.drawText("RUN", middle + 10, top + 2, self.selected)
+        thumby.display.update()
+
+    def renderText(self, text):
+        x = 0
+        y = 0 - self.scroll * 8
+        for i in range(len(text)):
+            if text[i] == '\n':
+                x = 0
+                y += 8
+            else:
+                thumby.display.drawText(text[i], x, y, 1)
+                x += 7
+                if x > 72 - 6:
+                    x = 0
+                    y += 8
