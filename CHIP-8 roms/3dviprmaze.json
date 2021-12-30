@@ -4,9 +4,9 @@
   "desc": "3D VIP'r Maze is an homage to the Sinclair ZX81 game 3D Monster Maze from 1981. It has an endless supply of randomly generated mazes, just like its namesake, but unfortunately is does not have a monter in it. Your challenge, if you accept it: to find the exit in each maze! How far can you get? The game will keep score of how many mazes you have solved. Move around with UP, DOWN, LEFT and RIGHT. Note that loading takes a while due to the fact that a new maze is being generated just for you.",
   "type": "SCHIP",
   "keys": {
-      "up": 5,
-      "down": 8,
-      "left": 7,
-      "right": 9
+    "up": 5,
+    "down": 8,
+    "left": 7,
+    "right": 9
   }
 }

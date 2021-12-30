@@ -3,7 +3,7 @@
   "desc": "An implementation of the classic game Pong, for one person. Originally this game is played against a friend, both moving one of the paddles. This is a single player version where you play against the computer. Move your paddle with UP and DOWN.",
   "type": "SCHIP",
   "keys": {
-      "up": 1,
-      "down": 4
+    "up": 1,
+    "down": 4
   }
 }

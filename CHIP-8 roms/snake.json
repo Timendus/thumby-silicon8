@@ -3,9 +3,9 @@
   "desc": "A very minimalistic implementation of the popular game Snake. Move the snake around using UP, DOWN, LEFT and RIGHT. Eat the apples to grow the snake, but be careful that you don't hit your tail!",
   "type": "SCHIP",
   "keys": {
-      "up": 5,
-      "down": 8,
-      "left": 7,
-      "right": 9
+    "up": 5,
+    "down": 8,
+    "left": 7,
+    "right": 9
   }
 }
