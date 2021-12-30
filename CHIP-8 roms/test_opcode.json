@@ -1,4 +1,6 @@
 {
   "name": "Corax89 test",
+  "desc": "A ROM that tests a couple of CHIP-8 opcodes and tells you if they have been implemented right.",
+  "link": "https://github.com/corax89/chip8-test-rom",
   "type": "VIP"
 }

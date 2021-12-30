@@ -1,8 +1,8 @@
 {
   "name": "Space invaders (David Winter, 199?)",
+  "desc": "The insanely popular game of Space Invaders, brought to CHIP-8 with style by David Winter. Waves of aliens come to threaten our world, and it is up to you to protect us. Move your ship with LEFT or RIGHT, shoot with A or B.",
   "type": "SCHIP",
   "keys": {
-      "up": 5,
       "left": 4,
       "right": 6,
       "a": 5,
