@@ -422,8 +422,8 @@ class CPU:
     		self.display.scrollLeft()
     		self.bumpSpecType(types.SCHIP)
     	elif op == 0x00FD:
-    		# "Exit" interpreter. Will just halt in our implementation
-    		self.running = false
+    		# Exit interpreter
+    		self.running = False
     		self.bumpSpecType(types.SCHIP)
     	elif op == 0x00FE:
     		# Set normal screen resolution
@@ -435,7 +435,7 @@ class CPU:
     		self.bumpSpecType(types.SCHIP)
     	else:
             print("RCA 1802 assembly calls not supported at address", self.pc-2, "opcode", op)
-            self.running = false
+            self.running = False
 
     @micropython.native
     def maths(self, x, y, n):

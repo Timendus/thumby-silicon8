@@ -31,30 +31,32 @@ import roms
 import cpu
 import menu
 
+def runSilicon8():
+    # Ask user to choose a ROM
+    while True:
+        gc.collect()
+        program = menu.Menu().choose(roms.catalog())
+        if menu.Confirm().choose(program):
+            break
+
+    gc.collect()
+
+    # Instantiate interpreter
+    instance = cpu.CPU()
+
+    # Set up 60Hz interrupt handler
+    timer = machine.Timer()
+    timer.init(mode=timer.PERIODIC, period=17, callback=instance.clockTick)
+
+    # Start the interpreter
+    thumbyinterface.setKeys(program["keys"])
+    instance.reset(program["type"])
+    thumby.display.fill(0)
+    thumby.display.update()
+    instance.run(roms.load(program))
+
 gc.enable()
 # machine.freq(125000000)
 
-# Ask user to choose a ROM
 while True:
-    program = menu.Menu().choose(roms.catalog())
-    if menu.Confirm().choose(program):
-        break
-
-# Instantiate interpreter
-cpu = cpu.CPU()
-
-# Set up 60Hz interrupt handler
-timer = machine.Timer()
-timer.init(mode=timer.PERIODIC, period=17, callback=cpu.clockTick)
-
-# Collect garbage ~every other clock
-# def garbageTruck(t):
-#     gc.collect()
-# timer.init(mode=timer.PERIODIC, period=33, callback=garbageTruck)
-
-# Start the interpreter
-thumbyinterface.setKeys(program["keys"])
-cpu.reset(program["type"])
-thumby.display.fill(0)
-thumby.display.update()
-cpu.run(roms.load(program))
+    runSilicon8()
