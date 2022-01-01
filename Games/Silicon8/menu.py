@@ -68,58 +68,84 @@ class Confirm:
     def __init__(self):
         self.selected = 0
         self.scroll = 0
+        self.textHeight = 0
 
     def choose(self, program):
-        self.program = program
+        # What to display about this program?
+        totalText = program["name"] + '\n\n' + program["desc"]
+        if "link" in program:
+            totalText += '\n\nMore info:\n' + program["link"]
+        self.text = self.breakText(totalText)
+
         while True:
             self.render()
-            if self.waitInput():
-                return self.selected == 0
+            while thumby.buttonU.pressed() or \
+                  thumby.buttonD.pressed() or \
+                  thumby.buttonA.pressed() or \
+                  thumby.buttonB.pressed() or \
+                  thumby.buttonL.pressed() or \
+                  thumby.buttonR.pressed():
+                pass
+            while True:
+                if thumby.buttonL.pressed():
+                    self.selected = 1
+                    break
+                if thumby.buttonR.pressed():
+                    self.selected = 0
+                    break
+                if thumby.buttonU.pressed() and self.scroll > 0:
+                    self.scroll -= 1
+                    break
+                if thumby.buttonD.pressed() and self.scroll < len(self.text) - 3:
+                    self.scroll += 1
+                    break
+                if thumby.buttonA.pressed() or thumby.buttonB.pressed():
+                    return self.selected == 0
 
-    def waitInput(self):
-        while thumby.buttonU.pressed() or thumby.buttonD.pressed() or thumby.buttonA.pressed() or thumby.buttonB.pressed() or thumby.buttonL.pressed() or thumby.buttonR.pressed():
-            pass
+    # Figure out where to break the sentence so it makes sense to the reader.
+    @micropython.native
+    def breakText(self, text):
+        c = const(12) # Max characters per line
+        result = []
+        i = 0
+        while i < len(text):
+            # Where to break this line?
+            j = i
+            brk = i + c
+            while j < len(text) and j - i < c + 1:
+                a = text[j]
+                if j - i < c and (a == '/' or a == '&'):
+                    brk = j + 1
+                if a == ' ':
+                    brk = j + 1
+                if a == '\n':
+                    brk = j + 1
+                    break
+                j += 1
+            if j == len(text):
+                brk = len(text)
+            result.append(text[i:brk])
+            i = brk
+        return result
 
-        while True:
-            if thumby.buttonL.pressed() or thumby.buttonR.pressed():
-                self.selected ^= 1
-                return False
-            if thumby.buttonU.pressed() and self.scroll > 0:
-                self.scroll -= 1
-                return False
-            if thumby.buttonD.pressed() and self.scroll < 100:
-                self.scroll += 1
-                return False
-            if thumby.buttonA.pressed() or thumby.buttonB.pressed():
-                return True
-
+    @micropython.native
     def render(self):
-        thumby.display.fill(0)
+        disp = thumby.display
+        dt = disp.drawText
+        disp.fill(0)
 
-        # Game information
-        totalText = self.program["name"] + '\n\n' + self.program["desc"]
-        self.renderText(totalText)
+        # Show game information
+        for i in range(0,4):
+            j = self.scroll + i
+            if j < len(self.text):
+                dt(self.text[j], 0, i*8, 1)
 
-        # Bottom menu
+        # Show bottom menu
         height = 10
-        top = thumby.display.height - height
-        middle = int(thumby.display.width / 2)
-        thumby.display.drawFilledRectangle(0, top, thumby.display.width, height, 1)
-        thumby.display.drawFilledRectangle(self.selected * middle, top + 1, middle, height - 1, 0)
-        thumby.display.drawText("BACK", 6, top + 2, self.selected ^ 1)
-        thumby.display.drawText("RUN", middle + 10, top + 2, self.selected)
-        thumby.display.update()
-
-    def renderText(self, text):
-        x = 0
-        y = 0 - self.scroll * 8
-        for i in range(len(text)):
-            if text[i] == '\n':
-                x = 0
-                y += 8
-            else:
-                thumby.display.drawText(text[i], x, y, 1)
-                x += 7
-                if x > 72 - 6:
-                    x = 0
-                    y += 8
+        top = disp.height - height
+        middle = int(disp.width / 2)
+        disp.drawFilledRectangle(0, top, disp.width, height, 1)
+        disp.drawFilledRectangle(self.selected * middle, top + 1, middle, height - 1, 0)
+        dt("BACK", 6, top + 2, self.selected ^ 1)
+        dt("RUN", middle + 10, top + 2, self.selected)
+        disp.update()
