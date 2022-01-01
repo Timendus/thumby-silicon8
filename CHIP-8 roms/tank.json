@@ -1,6 +1,6 @@
 {
   "name": "Tank Warfare",
-  "desc": "You're a tank. And you're under attack! Kill the enemy or be killed. Move the tank with UP, DOWN, LEFT and RIGHT. Shoot with A or B. The game will keep score of how well you are doing.",
+  "desc": "You're a tank. And you're under attack! Kill the enemy or be killed. The game will keep score of how well you are doing.\n\nMove the tank with UP, DOWN, LEFT and RIGHT. Shoot with A or B.",
   "type": "VIP",
   "keys": {
     "up": 2,
