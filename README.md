@@ -4,9 +4,9 @@
 
 ![Gameplay of the game PONG](./pictures/emu-pong.png) ![Gameplay of the game Space Invaders](./pictures/emu-space.png)
 
-[Silicon8](https://github.com/Timendus/silicon8) is an interpreter for CHIP-8,
-SCHIP and XO-CHIP that was initially built in Go, and targeted mainly at
-WebAssembly. This version of it is a port to MicroPython for the
+The original [Silicon8](https://github.com/Timendus/silicon8) is an interpreter
+for CHIP-8, SCHIP and XO-CHIP written in Go, and targeted mainly at WebAssembly.
+This version of it is a port to MicroPython for the
 [Thumby](https://thumby.us/pages/beta) playable keychain.
 
 [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) is an interpreted programming
@@ -18,39 +18,64 @@ years the XO-CHIP extension has given it more colours, memory and better sound.
 Many people still write new software for this platform, not in the least at the
 yearly [Octojam](https://itch.io/jam/octojam-8).
 
+As such, there is an impressive library of programs and games available for
+CHIP-8. And we can now run almost all of them on Thumby too! 👾🕹
+
+## Caveats and warnings
+
 This is my first experiment with MicroPython and the Thumby, so it's probably an
 inefficient mess in the eyes of a "real" MicroPython developer. But this is a
 fun learning project for me 😄
 
+There are a couple of small known issues, [see below](#known-issues) if you run into trouble.
+
 Also, the physical Thumby keychains haven't shipped yet, so I do not yet have
 access to the real hardware. This has so far been developed using the emulator
-in the [Thumby IDE](https://tinycircuits.github.io/). So we have to be patient
-to be able to finalise this project 📭
+in the [Thumby IDE](https://tinycircuits.github.io/).
 
 ## Installation
 
-While it's not in the "Arcade" yet, you can manually download or copy & paste
-[`main.py`](./main.py) from this repository and load it onto your Thumby using
-the [Thumby IDE](https://tinycircuits.github.io/).
+I'll request to add Silicon8 to the Thumby "Arcade" once it has been properly
+tested on the physical product. You will then be able to install it with a
+couple of clickes. Untill then, you will have to manually get the MicroPython
+files from [`Games/Silicon8`](./Games/Silicon8) in this repository and load them
+onto your Thumby using the [Thumby IDE](https://tinycircuits.github.io/).
 
-### Getting CHIP-8 games into Silicon8 for Thumby
+(_When running in the emulator: Being able to load multiple files is a
+must, so use the [`/testing`](https://tinycircuits.github.io/testing/) version
+if still needed._)
 
-For the time being, you have to hardcode your ROMs into `main.py`. At the top of
-the file, from line 38 onwards, a dictionary of programs is defined. You can add
-any ROM you like to this dictionary by following the structure of the other
-programs. You can use the [`convert.js`](./convert.js) script to convert any
-`*.ch8` file into the right tuple of bytes (NodeJS required):
+### Getting CHIP-8 ROMs into Silicon8 for Thumby
 
-```bash
-git clone git@github.com:Timendus/thumby-silicon8.git
-cd thumby-silicon8
-./convert.js /path/to/pong.ch8
+CHIP-8 ROMs should be placed on your Tumby in the `./chip8` directory relative
+to the Silicon8 codebase. To get you started, try to copy a few of the games in
+[this repository](./Games/Silicon8/chip8) to your device!
+
+You can put any `*.ch8` file in your CHIP-8 ROMs directory and it will be picked
+up by Silicon8. If you want to, or if you need to change the controls or
+interpreter type, you can add a JSON file with the same name but an added
+extension `.json` (so `somegame.ch8` would become `somegame.ch8.json`) to
+configure your ROM.
+
+The JSON config file accepts this structure:
+
+```json
+{
+  "name": "The Classic Game of Pong",
+  "link": "https://a-link-to.some/info/if-available",
+  "desc": "A short and clear description of the game and its controls",
+  "type": "SCHIP",
+  "keys": {
+    "up": 1,
+    "down": 4
+  }
+}
 ```
 
-I plan on having Silicon8 for Thumby find any `*.ch8` files on the Thumby
-filesystem and allow you to run those. But since the filesystem isn't stable yet
-in the emulator, again we will have to be patient until the actual devices get
-shipped.
+All fields are optional. Valid options for `type` are `AUTO` (default), `VIP`,
+`SCHIP` or `XOCHIP`. Valid options for the keys are `up`, `down`, `left`,
+`right`, `a` and `b` for all the buttons on the Thumby. The numeric values are
+the corresponding keys to be pressed on the CHIP-8 keypad (0 - 15).
 
 ## Known issues
 
@@ -81,11 +106,9 @@ of a chore, that I have not yet felt like doing 😄🎶
 ### Speed
 
 This interpreter is not particularly fast in the Thumby emulator. I'm hoping
-it's a little better on the actual hardware. There's probably a lot to win in
-simplifying the sprite drawing function, I'll look at that when I refactor all
-the display stuff. If you have any other ideas or suggestions on how to boost
-the speed, please let me know. An issue or pull request on this repository will
-get my attention.
+it's a little better on the actual hardware. If you have any ideas or
+suggestions on how to boost the speed, please let me know. An issue or pull
+request on this repository will get my attention.
 
 ### Type "AUTO"
 
@@ -93,4 +116,5 @@ Like the original Silicon8, Silicon8 for Thumby has a mode "AUTO" that tries to
 auto-detect the right interpreter type. This doesn't always correctly identify
 SCHIP and XO-CHIP programs when they do rely on quirks for those platforms, but
 don't use any of the features of those platforms. You can easily work around
-this issue by specifying the interpreter type explicitly.
+this issue by specifying the interpreter type explicitly in the JSON config
+file that corresponds to your wrongly detected ROM.
