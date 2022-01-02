@@ -30,7 +30,7 @@ def catalog():
                 },
                 "file": file
             }
-            configFile = file.replace('.ch8', '.json')
+            configFile = file.replace('.ch8', '.ch8.json')
             if configFile in files:
                 try:
                     with open(ROM_PATH + '/' + configFile, 'r') as stream:
