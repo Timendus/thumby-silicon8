@@ -2,15 +2,15 @@ import types
 import os
 import ujson
 
-ROM_PATH = '/CHIP-8 roms'
+ROM_PATH = './chip8'
 
 def catalog():
     try:
         files = os.listdir(ROM_PATH)
     except OSError as err:
-        print("ROMs directory not found! Does '/CHIP-8 roms' exist?", err)
+        print("ROMs directory not found! Does '"+ROM_PATH+"' exist?", err)
         return [{
-            "name": "ROMs directory '/CHIP-8 roms' not found"
+            "name": "ROMs directory '"+ROM_PATH+"' not found"
         }]
 
     catalog = []
@@ -42,9 +42,9 @@ def catalog():
                     print('JSON parse error for ' + configFile + ':', err)
             catalog.append(defaults);
     if len(catalog) == 0:
-        print("No ROMs found in '/CHIP-8 roms'")
+        print("No ROMs found in '"+ROM_PATH+"'")
         return [{
-            "name": "No ROMs found in '/CHIP-8 roms'"
+            "name": "No ROMs found in '"+ROM_PATH+"'"
         }]
     return catalog
 
