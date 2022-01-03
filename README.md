@@ -1,6 +1,8 @@
 # Silicon8 for Thumby
 
-![The Silicon8 for Thumby splash screen](./pictures/emu-splash.png) ![The Silicon8 for Thumby menu system](./pictures/emu-menu.png)
+![The Silicon8 for Thumby splash screen](./pictures/emu-splash.png) ![Silicon8 for Thumby in action](./pictures/emu-video.gif)
+
+![The Silicon8 for Thumby ROM selection screen](./pictures/emu-menu.png) ![The Silicon8 for Thumby ROM details screen](./pictures/emu-details.png)
 
 ![Gameplay of the game PONG](./pictures/emu-pong.png) ![Gameplay of the game Space Invaders](./pictures/emu-space.png)
 
