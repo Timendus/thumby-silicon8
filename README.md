@@ -39,7 +39,7 @@ in the [Thumby IDE](https://tinycircuits.github.io/).
 
 I'll request to add Silicon8 to the Thumby "Arcade" once it has been properly
 tested on the physical product. You will then be able to install it with a
-couple of clickes. Untill then, you will have to manually get the MicroPython
+couple of clicks. Untill then, you will have to manually get the MicroPython
 files from [`Games/Silicon8`](./Games/Silicon8) in this repository and load them
 onto your Thumby using the [Thumby IDE](https://tinycircuits.github.io/).
 
