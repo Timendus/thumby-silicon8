@@ -31,11 +31,15 @@ import roms
 import cpu
 import menu
 
+index = 0
+scroll = 0
+
 def runSilicon8():
+    global index, scroll
     # Ask user to choose a ROM
     while True:
         gc.collect()
-        program = menu.Menu().choose(roms.catalog())
+        program, index, scroll = menu.Menu(index, scroll).choose(roms.catalog())
         if menu.Confirm().choose(program):
             break
 

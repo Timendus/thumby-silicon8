@@ -2,9 +2,9 @@ import thumby
 import time
 
 class Menu:
-    def __init__(self):
-        self.selected = 0
-        self.scroll = 0
+    def __init__(self, selected = 0, scroll = 0):
+        self.selected = selected
+        self.scroll = scroll
 
     def choose(self, programs):
         self.programs = programs
@@ -14,7 +14,7 @@ class Menu:
             self.lastInputTime = time.ticks_ms()
             self.lastAnimateTime = time.ticks_ms()
             if self.waitInput():
-                return self.programs[self.selected]
+                return self.programs[self.selected], self.selected, self.scroll
 
     def waitInput(self):
         # Wait for button release
