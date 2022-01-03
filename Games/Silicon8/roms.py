@@ -46,6 +46,8 @@ def catalog():
         return [{
             "name": "No ROMs found in '"+ROM_PATH+"'"
         }]
+
+    catalog.sort(key=lambda p: p.name)
     return catalog
 
 def load(entry):
