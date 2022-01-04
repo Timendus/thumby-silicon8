@@ -437,58 +437,59 @@ class CPU:
             print("RCA 1802 assembly calls not supported at address", self.pc-2, "opcode", op)
             self.running = False
 
-    @micropython.native
-    def maths(self, x, y, n):
+    @micropython.viper
+    def maths(self, x:int, y:int, n:int):
+        regs = ptr8(self.v)
     	if n == 0x0:
-    		self.v[x] = self.v[y]
+    		regs[x] = regs[y]
     	elif n == 0x1:
-    		self.v[x] |= self.v[y]
+    		regs[x] |= regs[y]
     		if self.vfQuirk:
-    			self.v[0xF] = 0
+    			regs[0xF] = 0
     	elif n == 0x2:
-    		self.v[x] &= self.v[y]
+    		regs[x] &= regs[y]
     		if self.vfQuirk:
-    			self.v[0xF] = 0
+    			regs[0xF] = 0
     	elif n == 0x3:
-    		self.v[x] ^= self.v[y]
+    		regs[x] ^= regs[y]
     		if self.vfQuirk:
-    			self.v[0xF] = 0
+    			regs[0xF] = 0
     	elif n == 0x4:
     		# Add register vY to vX
     		# Set VF to 01 if a carry occurs
     		# Set VF to 00 if a carry does not occur
-    		flag = (0xFF - self.v[x]) < self.v[y]
-    		self.v[x] += self.v[y]
+    		flag:bool = (0xFF - regs[x]) < regs[y]
+    		regs[x] += regs[y]
     		self.setFlag(flag)
     	elif n == 0x5:
     		# Subtract register vY from vX and store in vX
     		# Set VF to 00 if a borrow occurs
     		# Set VF to 01 if a borrow does not occur
-    		flag = self.v[x] >= self.v[y]
-    		self.v[x] -= self.v[y]
+    		flag:bool = regs[x] >= regs[y]
+    		regs[x] -= regs[y]
     		self.setFlag(flag)
     	elif n == 0x6:
     		# Shift right
     		if self.shiftQuirk:
     			y = x
     		# Set register VF to the least significant bit prior to the shift
-    		flag = self.v[y]&0b00000001 > 0
-    		self.v[x] = self.v[y] >> 1
+    		flag:bool = regs[y] & 0b00000001 > 0
+    		regs[x] = regs[y] >> 1
     		self.setFlag(flag)
     	elif n == 0x7:
     		# Subtract register vX from vY and store in vX
     		# Set VF to 00 if a borrow occurs
     		# Set VF to 01 if a borrow does not occur
-    		flag = self.v[y] >= self.v[x]
-    		self.v[x] = self.v[y] - self.v[x]
+    		flag:bool = regs[y] >= regs[x]
+    		regs[x] = regs[y] - regs[x]
     		self.setFlag(flag)
     	elif n == 0xE:
     		# Shift left
     		if self.shiftQuirk:
     			y = x
     		# Set register VF to the most significant bit prior to the shift
-    		flag = self.v[y]&0b10000000 > 0
-    		self.v[x] = self.v[y] << 1
+    		flag:bool = regs[y] & 0b10000000 > 0
+    		regs[x] = regs[y] << 1
     		self.setFlag(flag)
 
     @micropython.native
