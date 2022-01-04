@@ -127,10 +127,12 @@ class CPU:
         # Register display redraw interrupt for dispQuirk
         self.display.interrupt()
 
-    @micropython.native
+    @micropython.viper
     def run(self, program):
-        for i in range(0, len(program)):
-            self.ram[i + 0x200] = program[i]
+        ram = ptr8(self.ram)
+        prog = ptr8(program)
+        for i in range(int(len(program))):
+            ram[i + 0x200] = prog[i]
         while self.running:
             self.cycle()
 
