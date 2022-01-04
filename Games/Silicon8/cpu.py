@@ -121,8 +121,8 @@ class CPU:
         # few CPU cycles)
         self.rendering = not self.rendering
         if self.display.dirty and self.rendering:
-        	thumbyinterface.render(self.display.width, self.display.height, self.display.frameBuffers)
-        	self.display.dirty = False
+            thumbyinterface.render(self.display.width, self.display.height, self.display.frameBuffers)
+            self.display.dirty = False
 
         # Register display redraw interrupt for dispQuirk
         self.display.interrupt()
@@ -325,7 +325,7 @@ class CPU:
             self.bumpSpecType(types.XOCHIP)
         elif nn == 0x07:
             # Set register to value of delay timer
-			self.v[x] = self.dt
+            self.v[x] = self.dt
         elif nn == 0x0A:
             # Wait for keypress and return key in vX
             if self.waitForKey:
