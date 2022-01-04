@@ -92,55 +92,79 @@ class AccurateDisplay:
             self.dirty = True
 
     @micropython.native
-    def draw(self, x, y, n):
-        if self.waitForInterrupt():
+    def draw(self, x:int, y:int, n:int):
+        if self.cpu.dispQuirk and self.waitForInterrupt():
             return
+        self.drawSprite(x, y, n)
+        self.dirty = True
 
+    @micropython.viper
+    def drawSprite(self, x:int, y:int, n:int):
     	# Get real sprite position & height
-    	xPos = self.cpu.v[x] % self.width
-    	yPos = self.cpu.v[y] % self.height
-        height = n
+    	xPos:int = int(self.cpu.v[x]) % int(self.width)
+    	yPos:int = int(self.cpu.v[y]) % int(self.height)
+        height:int = n
         if height == 0:
             self.cpu.bumpSpecType(types.SCHIP)
             height = 16
 
         # Do the actual drawing
-        erases = False
-        ramPointer = self.cpu.i
+        erases:bool = False
+        ramPtr:ptr8 = ptr8(self.cpu.ram)
+        ramIndx:int = int(self.cpu.i)
+        selPlane:int = int(self.selectedPlane)
+        bufSize:int = int(self.width) * int(self.height) >> 3
+        width:int = int(self.width)
+        pixels:int = 0
+        offset:int = xPos & 7 # = xPos % 8
+        clip:bool = self.cpu.clipQuirk
 
         for plane in range(1, 3):                   # Go through both planes
-            if (plane & self.selectedPlane) == 0:   # Only manipulate if this plane is currently selected
+            if plane & selPlane == 0:               # Only manipulate if this plane is currently selected
                 continue
-            bufferPointer = int((yPos*self.width + xPos) / 8)
-            byteOffset = xPos % 8
+            bufPtr = ptr8(self.buffers[plane-1])
+            bufIndx = (yPos*width + xPos) >> 3
             for i in range(height):                 # Draw N lines
                 # Does this line fall off the bottom of the screen?
-                if bufferPointer >= int(self.width * self.height / 8):
-                    if self.cpu.clipQuirk:
+                if bufIndx >= bufSize:
+                    if clip:
                         continue
                     else:
-                        bufferPointer -= int(self.width * self.height / 8)
-                pixels = self.cpu.ram[self.cpu.a(ramPointer)]
-                erases = self.xorLine(pixels >> byteOffset, bufferPointer, plane) or erases
-                if byteOffset > 0:
-                    erases = self.xorLine(pixels << 8 - byteOffset, bufferPointer+1, plane) or erases
-                ramPointer += 1
-                if height == 16:
-                    pixels = self.cpu.ram[self.cpu.a(ramPointer)]
-                    erases = self.xorLine(pixels >> byteOffset, bufferPointer+1, plane) or erases
-                    if byteOffset > 0:
-                        erases = self.xorLine(pixels << 8 - byteOffset, bufferPointer+2, plane) or erases
-                    ramPointer += 1
-                bufferPointer += int(self.width / 8)
+                        bufIndx -= bufSize
 
-        self.dirty = True
+                pixels = ramPtr[ramIndx]
+
+                # Render left byte
+                erases = erases or bufPtr[bufIndx] & (pixels >> offset) != 0
+                bufPtr[bufIndx] = bufPtr[bufIndx] ^ (pixels >> offset)
+
+                # Render right byte if needed
+                if offset > 0 and bufIndx + 1 < bufSize:
+                    erases = erases or bufPtr[bufIndx+1] & (pixels << 8 - offset) != 0
+                    bufPtr[bufIndx+1] = bufPtr[bufIndx+1] ^ (pixels << 8 - offset)
+
+                ramIndx += 1
+
+                if height == 16 and bufIndx + 1 < bufSize:
+                    pixels = ramPtr[ramIndx]
+
+                    # Render right byte again
+                    erases = erases or bufPtr[bufIndx+1] & (pixels >> offset) != 0
+                    bufPtr[bufIndx+1] = bufPtr[bufIndx+1] ^ (pixels >> offset)
+
+                    # Render third byte if needed
+                    if offset > 0 and bufIndx + 2 < bufSize:
+                        erases = erases or bufPtr[bufIndx+2] & (pixels << 8 - offset) != 0
+                        bufPtr[bufIndx+2] = bufPtr[bufIndx+2] ^ (pixels << 8 - offset)
+
+                    ramIndx += 1
+
+                bufIndx += width >> 3
+
         self.cpu.v[0xF] = 1 if erases else 0 # Set collision flag
 
     @micropython.native
     def waitForInterrupt(self):
-        if not self.cpu.dispQuirk:
-            return False
-
         if self.waitForInt == 0:
             self.waitForInt = 1
             self.cpu.pc -= 2
@@ -151,15 +175,6 @@ class AccurateDisplay:
         else:
             self.waitForInt = 0
             return False
-
-    @micropython.native
-    def xorLine(self, pixels, bufferPointer, plane):
-        if bufferPointer >= len(self.buffers[plane-1]):
-            return False
-        current = self.buffers[plane-1][bufferPointer]
-        erases = (current & pixels) != 0
-        self.buffers[plane-1][bufferPointer] = current ^ pixels
-        return erases
 
     @micropython.native
     def setResolution(self, width, height):
