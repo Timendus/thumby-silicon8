@@ -260,7 +260,7 @@ class CPU:
                 self.opcodesFX29andUp(nn, x)
 
     # @micropython.native
-    def opcodes0to7(self, check, op, x, y, n, nn, nnn):
+    def opcodes0to7(self, check:int, op:int, x:int, y:int, n:int, nn:int, nnn:int):
         if check == 0x0000:
             self.machineCall(op, n)
         elif check == 0x1000:
@@ -304,7 +304,7 @@ class CPU:
             self.v[x] += nn
 
     @micropython.native
-    def opcodesFX1EandBelow(self, nn, x):
+    def opcodesFX1EandBelow(self, nn:int, x:int):
         if nn == 0x00:
             # Set i register to 16-bit value
             self.i = self.ram[self.a(self.pc)]<<8 | self.ram[self.a(self.pc+1)]
@@ -354,7 +354,7 @@ class CPU:
             self.i += self.v[x] & 0xFFFF
 
     @micropython.native
-    def opcodesFX29andUp(self, nn, x):
+    def opcodesFX29andUp(self, nn:int, x:int):
         if nn == 0x29:
             # Set i register to font data
             self.i = self.v[x] * 5
@@ -397,7 +397,7 @@ class CPU:
             self.bumpSpecType(types.SCHIP)
 
     @micropython.native
-    def machineCall(self, op, n):
+    def machineCall(self, op:int, n:int):
         check = op & 0xFFF0
     	if check == 0x00C0:
     		self.display.scrollDown(n)
@@ -501,7 +501,7 @@ class CPU:
             self.pc += 2
 
     @micropython.native
-    def a(self, address):
+    def a(self, address:int):
         if address >= self.RAMSize:
             print("Program attempted to access RAM outsize of memory")
             return 0
@@ -510,7 +510,7 @@ class CPU:
         return address
 
     @micropython.native
-    def s(self, address):
+    def s(self, address:int):
         if address >= self.stackSize:
             print("Program attempted to access invalid stack memory")
             return 0
@@ -519,7 +519,7 @@ class CPU:
         return address
 
     @micropython.native
-    def setFlag(self, comparison):
+    def setFlag(self, comparison:bool):
         self.v[0xF] = 0
         if comparison:
             self.v[0xF] = 1
