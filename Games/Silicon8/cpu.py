@@ -129,8 +129,8 @@ class CPU:
         # Render display if dirty (only render half of the interrupts to save a
         # few CPU cycles)
         self.rendering = not self.rendering
-        if self.display.dirty and self.rendering:
-            thumbyinterface.render(self.display.width, self.display.height, self.display.frameBuffers)
+        if self.rendering:
+            thumbyinterface.render(self.display.width, self.display.height, self.display.frameBuffers, self.display.dirty)
             self.display.dirty = False
 
         # Register display redraw interrupt for dispQuirk
