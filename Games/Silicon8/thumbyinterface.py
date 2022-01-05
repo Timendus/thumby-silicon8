@@ -1,4 +1,5 @@
 import thumby
+import types
 from framebuf import FrameBuffer, MONO_VLSB
 
 #### Sound
@@ -20,11 +21,26 @@ dispBuffer = FrameBuffer(
     thumby.display.height,
     MONO_VLSB
 )
+showing = 1
+dispType = types.MONOCHROME
+
+def setDisplay(type):
+    global dispType
+    dispType = type
 
 @micropython.viper
-def render(dispWidth:int, dispHeight:int, planeBuffer):
+def render(dispWidth:int, dispHeight:int, planeBuffers, dirty:bool):
+    global dispBuffer, showing, dispType
+    if dispType == types.MONOCHROME:
+        if not dirty:
+            return
+        plane = 0
+    else:
+        showing = 0 if int(showing) == 2 else int(showing) + 1
+        plane = 0 if int(showing) > 0 else 1
+
     dispBuffer.blit(
-        planeBuffer[0],
+        planeBuffers[plane],
         (int(thumby.display.width) - dispWidth) >> 1,
         (int(thumby.display.height) - dispHeight) >> 1,
         min(dispWidth, thumby.display.width),

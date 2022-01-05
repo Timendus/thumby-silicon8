@@ -20,6 +20,7 @@ def catalog():
                 "name": file.replace('.ch8',''),
                 "desc": "No additional information found",
                 "type": types.AUTO,
+                "disp": types.MONOCHROME,
                 "keys": {
                     "up": 5,
                     "down": 8,
@@ -37,6 +38,8 @@ def catalog():
                         config = ujson.load(stream)
                         if "type" in config:
                             config["type"] = types.parseType(config["type"])
+                        if "disp" in config:
+                            config["disp"] = types.parseDisp(config["disp"])
                         defaults.update(config)
                 except ValueError as err:
                     print('JSON parse error for ' + configFile + ':', err)
