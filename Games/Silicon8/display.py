@@ -1,5 +1,6 @@
 from framebuf import FrameBuffer, MONO_HLSB
 import types
+import time
 
 # Representation of the CHIP-8 display. Supports two planes and two screen
 # sizes. Implementation in MicroPython of all the operations, which isn't the
@@ -31,8 +32,7 @@ class AccurateDisplay:
     # Called by 60Hz interrupt timer for dispQuirk
     @micropython.native
     def interrupt(self):
-        if self.waitForInt == 1:
-            self.waitForInt = 2
+        self.waitForInt = 1
 
     # Clears currently selected plane
     @micropython.native
@@ -93,8 +93,8 @@ class AccurateDisplay:
 
     @micropython.native
     def draw(self, x:int, y:int, n:int):
-        if self.cpu.dispQuirk and self.waitForInterrupt():
-            return
+        if self.cpu.dispQuirk:
+            self.waitForInterrupt()
         self.drawSprite(x, y, n)
         self.dirty = True
 
@@ -165,16 +165,9 @@ class AccurateDisplay:
 
     @micropython.native
     def waitForInterrupt(self):
-        if self.waitForInt == 0:
-            self.waitForInt = 1
-            self.cpu.pc -= 2
-            return True
-        elif self.waitForInt == 1:
-            self.cpu.pc -= 2
-            return True
-        else:
-            self.waitForInt = 0
-            return False
+        self.waitForInt = 0
+        while self.waitForInt == 0:
+            time.sleep_ms(1)
 
     @micropython.native
     def setResolution(self, width, height):

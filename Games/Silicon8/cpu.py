@@ -1,7 +1,16 @@
 import random
 import thumbyinterface
 import types
+import time
 from display import AccurateDisplay
+
+@micropython.viper
+def any(array) -> bool:
+    ptr = ptr8(array)
+    for i in range(int(len(array))):
+        if ptr[i]:
+            return True
+    return False
 
 # Main Silicon8 class that holds the virtual CPU
 # Pretty much a direct port of https://github.com/Timendus/silicon8 to MicroPython
@@ -197,7 +206,7 @@ class CPU:
         self.memQuirk = self.specType != types.SCHIP
         self.vfQuirk = self.specType == types.VIP
         self.clipQuirk = self.specType != types.XOCHIP
-        self.dispQuirk = False # self.specType == types.VIP
+        self.dispQuirk = self.specType == types.VIP
 
     @micropython.native
     def bumpSpecType(self, newType):
@@ -330,21 +339,20 @@ class CPU:
             self.v[x] = self.dt
         elif nn == 0x0A:
             # Wait for keypress and return key in vX
-            if self.waitForKey:
+            while True:
                 keyboard = thumbyinterface.getKeys()
-                for i in range(len(keyboard)):
-                    if keyboard[i]:
-                        self.v[x] = i
-                        self.waitForKey = False
-                        return
-                self.pc -= 2
-            else:
-                self.pc -= 2
+                if not any(keyboard):
+                    break
+                time.sleep_ms(1)
+            while True:
                 keyboard = thumbyinterface.getKeys()
-                for i in range(len(keyboard)):
-                    if keyboard[i]:
-                        return
-                self.waitForKey = True
+                if any(keyboard):
+                    break
+                time.sleep_ms(1)
+            for i in range(len(keyboard)):
+                if keyboard[i]:
+                    self.v[x] = i
+                    return
         elif nn == 0x15:
             # Set delay timer to value in vX
             self.dt = self.v[x]
