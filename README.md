@@ -31,7 +31,7 @@ fun learning project for me 😄
 
 There are a couple of small known issues, [see below](#known-issues) if you run into trouble.
 
-Also, the physical Thumby keychains haven't shipped yet, so I do not yet have
+Also, my physical Thumby keychain hasn't shipped yet, so I do not yet have
 access to the real hardware. This has so far been developed using the emulator
 in the [Thumby IDE](https://tinycircuits.github.io/).
 
@@ -39,19 +39,17 @@ in the [Thumby IDE](https://tinycircuits.github.io/).
 
 I'll request to add Silicon8 to the Thumby "Arcade" once it has been properly
 tested on the physical product. You will then be able to install it with a
-couple of clicks. Untill then, you will have to manually get the MicroPython
-files from [`Games/Silicon8`](./Games/Silicon8) in this repository and load them
-onto your Thumby using the [Thumby IDE](https://tinycircuits.github.io/).
+couple of clicks.
 
-(_When running in the emulator: Being able to load multiple files is a
-must, so use the [`/testing`](https://tinycircuits.github.io/testing/) version
-if still needed._)
+Untill then, you will have to manually get the MicroPython files from [this
+repository](./Games/Silicon8) and put them in `/Games/Silicon8` on your Thumby
+using the [Thumby IDE](https://tinycircuits.github.io/).
 
 ### Getting CHIP-8 ROMs into Silicon8 for Thumby
 
-CHIP-8 ROMs should be placed on your Tumby in the `./chip8` directory relative
-to the Silicon8 codebase. To get you started, try to copy a few of the games in
-[this repository](./Games/Silicon8/chip8) to your device!
+CHIP-8 ROMs should be placed on your Tumby in the `/Games/Silicon8/chip8`
+directory. To get you started, try to copy the games in [this
+repository](./Games/Silicon8/chip8) to your device!
 
 You can put any `*.ch8` file in your CHIP-8 ROMs directory and it will be picked
 up by Silicon8. If you want to, or if you need to change the controls or

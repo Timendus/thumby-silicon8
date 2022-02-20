@@ -2,7 +2,7 @@ import types
 import os
 import ujson
 
-ROM_PATH = './chip8'
+ROM_PATH = '/Games/Silicon8/chip8'
 
 def catalog():
     try:

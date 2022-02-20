@@ -23,6 +23,10 @@ thumby.display.setFPS(0)
 thumby.display.blit(splash, 0, 0, 72, 40, -1, 0, 0)
 thumby.display.update()
 
+# Fix import path so it finds our modules
+import sys
+sys.path.append('/Games/Silicon8')
+
 import time
 import gc
 import machine
