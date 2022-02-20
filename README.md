@@ -77,6 +77,9 @@ All fields are optional. Valid options for `type` are `AUTO` (default), `VIP`,
 `right`, `a` and `b` for all the buttons on the Thumby. The numeric values are
 the corresponding keys to be pressed on the CHIP-8 keypad (0 - 15).
 
+You can quit a running CHIP-8 ROM and return to the Silicon8 menu at any time by
+holding down the key combination `LEFT`, `A` and `B`.
+
 ## Known issues
 
 The interpretation of CHIP-8, SCHIP and XO-CHIP should be pretty close to the

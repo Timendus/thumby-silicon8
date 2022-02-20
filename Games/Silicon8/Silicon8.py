@@ -44,6 +44,8 @@ def runSilicon8():
     while True:
         gc.collect()
         program, index, scroll = menu.Menu(index, scroll).choose(roms.catalog())
+        if not program["file"]:
+            return False
         if menu.Confirm().choose(program):
             break
 
@@ -62,9 +64,10 @@ def runSilicon8():
     thumby.display.fill(0)
     thumby.display.update()
     instance.run(roms.load(program))
+    return True
 
 gc.enable()
 # machine.freq(125000000)
 
-while True:
-    runSilicon8()
+while runSilicon8():
+    pass

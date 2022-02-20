@@ -58,3 +58,8 @@ def getKeys():
     if "b" in keymap:
         keyboard[keymap["b"]]     |= thumby.buttonB.pressed()
     return keyboard
+
+# Key combination to quit the running program
+@micropython.viper
+def breakCombo():
+    return thumby.buttonL.pressed() and thumby.buttonA.pressed() and thumby.buttonB.pressed()

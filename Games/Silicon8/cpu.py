@@ -142,7 +142,7 @@ class CPU:
         prog = ptr8(program)
         for i in range(int(len(program))):
             ram[i + 0x200] = prog[i]
-        while self.running:
+        while self.running and not thumbyinterface.breakCombo():
             self.cycle()
 
     def reset(self, interpreter):
