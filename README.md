@@ -4,8 +4,8 @@
 
 The original [Silicon8](https://github.com/Timendus/silicon8) is an interpreter
 for CHIP-8, SCHIP and XO-CHIP written in Go, and targeted mainly at WebAssembly.
-This version of it is a port to MicroPython for the
-[Thumby](https://thumby.us/pages/beta) playable keychain.
+This version of it is a port to MicroPython for the [Thumby](https://thumby.us/)
+playable keychain.
 
 [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) is an interpreted programming
 language, going back to the '70s. It was initially used on the COSMAC VIP and
