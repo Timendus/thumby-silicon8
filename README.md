@@ -25,11 +25,8 @@ This is my first experiment with MicroPython and the Thumby, so it's probably an
 inefficient mess in the eyes of a "real" MicroPython developer. But this is a
 fun learning project for me 😄
 
-There are a couple of small known issues, [see below](#known-issues) if you run into trouble.
-
-Also, my physical Thumby keychain hasn't shipped yet, so I do not yet have
-access to the real hardware. This has so far been developed using the emulator
-in the [Thumby IDE](https://tinycircuits.github.io/).
+There are a couple of small known issues, [see below](#known-issues) if you run
+into trouble.
 
 ## Installation
 
@@ -37,21 +34,47 @@ I'll request to add Silicon8 to the Thumby "Arcade" once it has been properly
 tested on the physical product. You will then be able to install it with a
 couple of clicks.
 
-Untill then, you will have to manually get the MicroPython files from [this
-repository](./Games/Silicon8) and put them in `/Games/Silicon8` on your Thumby
-using the [Thumby IDE](https://tinycircuits.github.io/).
+Untill then, you will have to manually get the MicroPython files from this
+repository and put them in `/Games/Silicon8` on your Thumby using the [Thumby
+Code Editor](https://code.thumby.us/):
+
+1. Connect your Thumby, wait for the file system tree to load
+2. Right-click on "Games" in the file system tree and select "New folder"
+3. Type in `Silicon8` and press Enter
+4. Click "Upload" at the bottom of the file system panel, select all the `.py`
+   files from [`/Games/Silicon8` in this repository](./Games/Silicon8)
+5. Select `/Games/Silicon8` as the destination path ("Final Path") on the Thumby
+   and click "Ok"
+6. Continue below to add some actual games
 
 ### Getting CHIP-8 ROMs into Silicon8 for Thumby
 
 CHIP-8 ROMs should be placed on your Tumby in the `/Games/Silicon8/chip8`
-directory. To get you started, try to copy the games in [this
-repository](./Games/Silicon8/chip8) to your device!
+directory. To get you started, you can copy the games in this repository to your
+device:
+
+1. Right-click on "Silicon8" in the file system tree and select "New folder"
+2. Type in `chip8` and press Enter
+3. Click "Upload" at the bottom of the file system panel, select all the `.ch8`
+   and `.ch8.json` files from the [`/Games/Silicon8/chip8` folder in this
+   repository](./Games/Silicon8/chip8)
+4. Select `/Games/Silicon8/chip8` as the destination path ("Final Path") on the
+   Thumby and click "Ok"
+5. Disconnect and reboot your Thumby, you should now see "Silicon8" in the menu.
+   Starting it should show you all the game ROMs you copied.
+6. Select a ROM file and start playing!
+
+You can quit a running CHIP-8 ROM and return to the Silicon8 menu at any time by
+holding down the key combination `LEFT`, `A` and `B`.
+
+#### Adding more CHIP-8 ROMs
 
 You can put any `*.ch8` file in your CHIP-8 ROMs directory and it will be picked
-up by Silicon8. If you want to, or if you need to change the controls or
-interpreter type, you can add a JSON file with the same name but an added
-extension `.json` (so `somegame.ch8` would become `somegame.ch8.json`) to
-configure your ROM.
+up by Silicon8. You can find many ROMs on the Internet and in particular on the
+[CHIP-8 Archive](https://johnearnest.github.io/chip8Archive/). If you want to,
+or if you need to change the controls or interpreter type, you can add a JSON
+file with the same name but an added extension `.json` (so `somegame.ch8` would
+become `somegame.ch8.json`) to configure your ROM.
 
 The JSON config file accepts this structure:
 
@@ -73,9 +96,6 @@ All fields are optional. Valid options for `type` are `AUTO` (default), `VIP`,
 `right`, `a` and `b` for all the buttons on the Thumby. The numeric values are
 the corresponding keys to be pressed on the CHIP-8 keypad (0 - 15).
 
-You can quit a running CHIP-8 ROM and return to the Silicon8 menu at any time by
-holding down the key combination `LEFT`, `A` and `B`.
-
 ## Known issues
 
 The interpretation of CHIP-8, SCHIP and XO-CHIP should be pretty close to the
@@ -87,26 +107,28 @@ issue](https://github.com/Timendus/thumby-silicon8/issues/new).
 
 Due to the small screen size and the limited colours of the Thumby, Silicon8 for
 Thumby is currently limited to `lowres` mode (64x32 pixels) in monochrome. If
-you use `hires` mode, the central 72x40 pixels will be shown and the rest
+your ROM uses `hires` mode, the central 72x40 pixels will be shown and the rest
 discarded, which doesn't make for great gameplay. When using XO-CHIP's four
 colour mode, only plane 1 will be rendered to the screen.
 
 I have some ideas on how to improve this in the future, but I will need to play
-with the physical hardware first to see if those ideas are feasible.
+with the physical hardware some more to see if those ideas are feasible.
 
 ### Sound limitations
 
-The Thumby has a very simple speaker. The current Thumby library does not expose
-this speaker in a more complicated way than setting a frequency and a duty
-cycle. You can, however, bypass the library and talk to the pin directly.
-Supporting the full XO-CHIP audio capabilities on this low a level will be a bit
-of a chore, that I have not yet felt like doing 😄🎶
+The Thumby has a very simple speaker. Silicon8 uses it for the CHIP-8 beeper
+sound. The full XO-CHIP audio capabilities are not (yet) supported though.
+
+The current Thumby library does not expose the speaker in a more complicated way
+than setting a frequency and a duty cycle. You can, however, bypass the library
+and talk to the pin directly. Implementing XO-CHIP audio on this low a level
+will be a bit of a chore, that I have not yet felt like doing 😄🎶
 
 ### Speed
 
-This interpreter is not particularly fast in the Thumby emulator. I'm hoping
-it's a little better on the actual hardware. If you have any ideas or
-suggestions on how to boost the speed, please let me know. An issue or pull
+This interpreter is not particularly fast in the Thumby emulator. It's a lot
+faster, and quite playable, on the actual hardware though. If you have any ideas
+or suggestions on how to boost the speed, please let me know. An issue or pull
 request on this repository will get my attention.
 
 ### Type "AUTO"
