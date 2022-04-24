@@ -1,10 +1,6 @@
 # Silicon8 for Thumby
 
-![The Silicon8 for Thumby splash screen](./pictures/emu-splash.png) ![Silicon8 for Thumby in action](./pictures/emu-video.gif)
-
-![The Silicon8 for Thumby ROM selection screen](./pictures/emu-menu.png) ![The Silicon8 for Thumby ROM details screen](./pictures/emu-details.png)
-
-![Gameplay of the game PONG](./pictures/emu-pong.png) ![Gameplay of the game Space Invaders](./pictures/emu-space.png)
+![3D VIP'r Maze, running on the Thumby](./pictures/hardware-3d-vipr-maze.jpg)
 
 The original [Silicon8](https://github.com/Timendus/silicon8) is an interpreter
 for CHIP-8, SCHIP and XO-CHIP written in Go, and targeted mainly at WebAssembly.
@@ -121,3 +117,11 @@ SCHIP and XO-CHIP programs when they do rely on quirks for those platforms, but
 don't use any of the features of those platforms. You can easily work around
 this issue by specifying the interpreter type explicitly in the JSON config
 file that corresponds to your wrongly detected ROM.
+
+## Screenshots from the emulator
+
+![The Silicon8 for Thumby splash screen](./pictures/emu-splash.png) ![Silicon8 for Thumby in action](./pictures/emu-video.gif)
+
+![The Silicon8 for Thumby ROM selection screen](./pictures/emu-menu.png) ![The Silicon8 for Thumby ROM details screen](./pictures/emu-details.png)
+
+![Gameplay of the game PONG](./pictures/emu-pong.png) ![Gameplay of the game Space Invaders](./pictures/emu-space.png)
