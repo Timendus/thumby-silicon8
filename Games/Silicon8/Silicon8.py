@@ -23,9 +23,9 @@ thumby.display.setFPS(0)
 thumby.display.blit(splash, 0, 0, 72, 40, -1, 0, 0)
 thumby.display.update()
 
-# Fix import path so it finds our modules
+# Fix import path so it finds our modules above all else
 import sys
-sys.path.append('/Games/Silicon8')
+sys.path.insert(0, '/Games/Silicon8')
 
 import time
 import gc
@@ -35,19 +35,28 @@ import roms
 import cpu
 import menu
 
+gc.enable()
+
 index = 0
 scroll = 0
+
+def gb_collect():
+    print("Free memory before garbage collect:", gc.mem_free())
+    gc.collect()
+    print("Free memory after garbage collect:", gc.mem_free())
 
 def runSilicon8():
     global index, scroll
     # Ask user to choose a ROM
     while True:
-        gc.collect()
+        gb_collect()
         program, index, scroll = menu.Menu(index, scroll).choose(roms.catalog())
+        if not program["file"]:
+            return False
         if menu.Confirm().choose(program):
             break
 
-    gc.collect()
+    gb_collect()
 
     # Instantiate interpreter
     instance = cpu.CPU()
@@ -62,9 +71,9 @@ def runSilicon8():
     thumby.display.fill(0)
     thumby.display.update()
     instance.run(roms.load(program))
+    return True
 
-gc.enable()
-# machine.freq(125000000)
+while runSilicon8():
+    pass
 
-while True:
-    runSilicon8()
+thumby.reset()

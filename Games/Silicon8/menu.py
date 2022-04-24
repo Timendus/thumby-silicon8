@@ -8,6 +8,10 @@ class Menu:
 
     def choose(self, programs):
         self.programs = programs
+        self.programs.append({
+            "name": "Quit Silicon8",
+            "file": False
+        })
         while True:
             self.animate = 0
             self.render()
