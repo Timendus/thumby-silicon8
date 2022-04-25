@@ -1,23 +1,31 @@
 # Silicon8 for Thumby
 
+**Silicon8 for Thumby** is an interpreter for the CHIP-8, SCHIP and XO-CHIP
+programming languages. It allows you to run games made for those platforms on your [Thumby](https://thumby.us/).
+
 ![3D VIP'r Maze, running on the Thumby](./pictures/hardware-3d-vipr-maze.jpg)
 
-The original [Silicon8](https://github.com/Timendus/silicon8) is an interpreter
-for CHIP-8, SCHIP and XO-CHIP written in Go, and targeted mainly at WebAssembly.
-This version of it is a port to MicroPython for the [Thumby](https://thumby.us/)
-playable keychain.
-
-[CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) is an interpreted programming
+**[CHIP-8](https://en.wikipedia.org/wiki/CHIP-8)** is an interpreted programming
 language, going back to the '70s. It was initially used on the COSMAC VIP and
 Telmac 1800 8-bit microcomputers and was made to allow video games to be more
 easily programmed for and shared among these computers. In 1990 CHIP-8 saw a
-revival in the form or SCHIP on HP-48 graphing calculators, and in more recent
-years the XO-CHIP extension has given it more colours, memory and better sound.
-Many people still write new software for this platform, not in the least at the
-yearly [Octojam](https://itch.io/jam/octojam-8).
+revival in the form or **SCHIP** on HP-48 graphing calculators, and in more
+recent years the **XO-CHIP** extension has given it more colours, memory and
+better sound. Many people still write new software for this platform, not in the
+least at the yearly [Octojam](https://itch.io/jam/octojam-8).
 
 As such, there is an impressive library of programs and games available for
-CHIP-8. And we can now run almost all of them on Thumby too! 👾🕹
+CHIP-8 and friends. And we can now run almost all of them on Thumby too! 👾🕹
+
+Due to the limited computing power and low screen resolution of CHIP-8, I
+thought this is a great fit for the Thumby, and also a testament of how far
+computers have come. What was once the pinnacle of computer gaming for hobbyists
+now runs easily on a cheap keychain, with pixels and memory to spare 😄
+
+(The original [Silicon8](https://github.com/Timendus/silicon8) is written in Go,
+and targeted mainly at WebAssembly. It can be [run in your web browser
+here](https://timendus.github.io/silicon8/). This version of it is a port to
+MicroPython for the Thumby playable keychain.)
 
 ## Caveats and warnings
 
