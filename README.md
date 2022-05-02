@@ -17,6 +17,9 @@ least at the yearly [Octojam](https://itch.io/jam/octojam-8).
 As such, there is an impressive library of programs and games available for
 CHIP-8 and friends. And we can now run almost all of them on Thumby too! 👾🕹
 
+![Silicon8 running in the Thumby emulator](./pictures/emu-video2.gif)
+<br/>_Note: Runs faster and with less flicker on hardware_
+
 Due to the limited computing power and low screen resolution of CHIP-8, I
 thought this is a great fit for the Thumby, and also a testament of how far
 computers have come. What was once the pinnacle of computer gaming for hobbyists
