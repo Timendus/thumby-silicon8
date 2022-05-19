@@ -67,7 +67,7 @@ def runSilicon8():
 
     # Start the interpreter
     thumbyinterface.setKeys(program["keys"])
-    thumbyinterface.setDisplay(program["disp"])
+    thumbyinterface.display.setType(program["disp"])
     instance.reset(program["type"])
     thumby.display.fill(0)
     thumby.display.update()
