@@ -129,8 +129,8 @@ class CPU:
         # Render display if dirty (only render half of the interrupts to save a
         # few CPU cycles)
         self.rendering = not self.rendering
-        if self.rendering:
-            thumbyinterface.render(self.display.width, self.display.height, self.display.frameBuffers, self.display.dirty)
+        if self.display.dirty and self.rendering:
+            thumbyinterface.display.render(self.display.width, self.display.height, self.display.frameBuffers)
             self.display.dirty = False
 
         # Register display redraw interrupt for dispQuirk
@@ -144,6 +144,7 @@ class CPU:
             ram[i + 0x200] = prog[i]
         while self.running and not thumbyinterface.breakCombo():
             self.cycle()
+        thumbyinterface.display.stop()
 
     def reset(self, interpreter):
         self.stop()

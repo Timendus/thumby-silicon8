@@ -1,5 +1,6 @@
 import thumby
 import types
+import grayscale
 from framebuf import FrameBuffer, MONO_VLSB
 
 #### Sound
@@ -15,39 +16,76 @@ def stopSound():
 
 #### Display
 
-dispBuffer = FrameBuffer(
-    thumby.display.display.buffer,
-    thumby.display.width,
-    thumby.display.height,
-    MONO_VLSB
-)
-showing = 1
-dispType = types.MONOCHROME
+class Display:
+    def __init__(self):
+        self._initMonochrome()
 
-def setDisplay(type):
-    global dispType
-    dispType = type
+    def setType(self, type):
+        if type == types.GRAYSCALE and self._dispType == types.MONOCHROME:
+            self._initGrayscale()
+        if type == types.MONOCHROME and self._dispType == types.GRAYSCALE:
+            self._gs.stop()
+            self._initMonochrome()
 
-@micropython.viper
-def render(dispWidth:int, dispHeight:int, planeBuffers, dirty:bool):
-    global dispBuffer, showing, dispType
-    if dispType == types.MONOCHROME:
-        if not dirty:
-            return
-        plane = 0
-    else:
-        showing = 0 if int(showing) == 2 else int(showing) + 1
-        plane = 0 if int(showing) > 0 else 1
+    def stop(self):
+        if self._dispType == types.GRAYSCALE:
+            self._gs.stop()
 
-    dispBuffer.blit(
-        planeBuffers[plane],
-        (int(thumby.display.width) - dispWidth) >> 1,
-        (int(thumby.display.height) - dispHeight) >> 1,
-        min(dispWidth, thumby.display.width),
-        min(dispHeight, thumby.display.height)
-    )
-    thumby.display.update()
+    def _initMonochrome(self):
+        self._dispBuffer = FrameBuffer(
+            thumby.display.display.buffer,
+            thumby.display.width,
+            thumby.display.height,
+            MONO_VLSB
+        )
+        self._dispType = types.MONOCHROME
 
+    def _initGrayscale(self):
+        self._gs = grayscale.Grayscale()
+        self._dispBuffer1 = FrameBuffer(
+            self._gs.gsBuffer1.buffer,
+            self._gs.width,
+            self._gs.height,
+            MONO_VLSB
+        )
+        self._dispBuffer2 = FrameBuffer(
+            self._gs.gsBuffer2.buffer,
+            self._gs.width,
+            self._gs.height,
+            MONO_VLSB
+        )
+        self._dispType = types.GRAYSCALE
+
+    @micropython.viper
+    def render(dispWidth:int, dispHeight:int, planeBuffers):
+        if self._dispType == types.MONOCHROME:
+            self._dispBuffer.blit(
+                planeBuffers[0],
+                (int(thumby.display.width) - dispWidth) >> 1,
+                (int(thumby.display.height) - dispHeight) >> 1,
+                min(dispWidth, thumby.display.width),
+                min(dispHeight, thumby.display.height)
+            )
+            thumby.display.update()
+
+        if self._dispType == types.GRAYSCALE:
+            self._dispBuffer1.blit(
+                planeBuffers[0],
+                (int(thumby.display.width) - dispWidth) >> 1,
+                (int(thumby.display.height) - dispHeight) >> 1,
+                min(dispWidth, thumby.display.width),
+                min(dispHeight, thumby.display.height)
+            )
+            self._dispBuffer2.blit(
+                planeBuffers[1],
+                (int(thumby.display.width) - dispWidth) >> 1,
+                (int(thumby.display.height) - dispHeight) >> 1,
+                min(dispWidth, thumby.display.width),
+                min(dispHeight, thumby.display.height)
+            )
+            self._gs._joinBuffers()
+
+display = Display()
 
 #### Key input
 
