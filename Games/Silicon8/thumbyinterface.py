@@ -57,7 +57,7 @@ class Display:
         self._dispType = types.GRAYSCALE
 
     @micropython.viper
-    def render(dispWidth:int, dispHeight:int, planeBuffers):
+    def render(self, dispWidth:int, dispHeight:int, planeBuffers):
         if self._dispType == types.MONOCHROME:
             self._dispBuffer.blit(
                 planeBuffers[0],
