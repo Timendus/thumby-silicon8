@@ -137,11 +137,7 @@ class CPU:
         self.display.interrupt()
 
     @micropython.viper
-    def run(self, program):
-        ram = ptr8(self.ram)
-        prog = ptr8(program)
-        for i in range(int(len(program))):
-            ram[i + 0x200] = prog[i]
+    def run(self):
         while self.running and not thumbyinterface.breakCombo():
             self.cycle()
         thumbyinterface.display.stop()

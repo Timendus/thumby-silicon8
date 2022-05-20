@@ -53,10 +53,15 @@ def catalog():
     catalog.sort(key=lambda p: p["name"])
     return catalog
 
-def load(entry):
+def loadinto(entry, memory):
     try:
-        with open(ROM_PATH + '/' + entry["file"], 'rb') as stream:
-            bytes = bytearray(stream.read(-1))
-            return bytes
-    except IOError as err:
-        print('Could not read CH8 file ' + file + ':', err)
+        file = open(ROM_PATH + '/' + entry["file"], 'rb')
+        file.seek(0,2)
+        size = file.tell()
+        if size > len(memory):
+            return -1
+        file.seek(0)
+        file.readinto(memory)
+        return size
+    except Exception as err:
+        print('Could not read CH8 file ' + entry["file"] + ':', err)
