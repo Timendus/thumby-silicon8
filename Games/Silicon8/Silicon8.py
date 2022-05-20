@@ -71,7 +71,13 @@ def runSilicon8():
     instance.reset(program["type"])
     thumby.display.fill(0)
     thumby.display.update()
-    instance.run(roms.load(program))
+
+    # Load program file directly into memory, unless it doesn't fit
+    memory = memoryview(instance.ram)
+    if roms.loadinto(program, memory[512:]) == -1:
+        return False
+
+    instance.run()
     return True
 
 while runSilicon8():
