@@ -3,9 +3,9 @@ import types
 import time
 
 # Representation of the CHIP-8 display. Supports two planes and two screen
-# sizes. Implementation in MicroPython of all the operations, which isn't the
-# fastest, but is accurate to CHIP-8 and friends.
-class AccurateDisplay:
+# sizes. Implementation in MicroPython of all the operations, accurate to CHIP-8
+# and friends.
+class Display:
     def __init__(self, cpu):
         self.cpu = cpu
 
@@ -174,97 +174,3 @@ class AccurateDisplay:
         self.width = width
         self.height = height
         self.initBuffers()
-
-
-
-
-class FastDisplay:
-    def __init__(self, cpu):
-        self.cpu = cpu
-
-    def reset(self):
-        self.width = 64
-        self.height = 32
-        self.numPlanes = 1
-        self.selectedPlane = 1
-        self.dirty = True
-        self.frameBuffers = [
-            FrameBuffer(bytearray(int(128*64/8)), 128, 64, MONO_HLSB),
-            FrameBuffer(bytearray(int(128*64/8)), 128, 64, MONO_HLSB)
-        ]
-
-    @micropython.viper
-    def interrupt(self):
-        return
-
-    # Clears currently selected plane
-    @micropython.viper
-    def clear(self):
-        self.clearPlanes(self.selectedPlane)
-
-    # Clears given planes
-    @micropython.native
-    def clearPlanes(self, planes):
-        for i in range(len(self.frameBuffers)):
-            if (i+1) & planes > 0:
-                self.frameBuffers[i].fill(0)
-        self.dirty = True
-
-    @micropython.native
-    def scrollDown(self, n):
-        for i in range(len(self.frameBuffers)):
-            if (i+1) & self.selectedPlane > 0:
-                self.frameBuffers[i].scroll(0, n)
-
-    @micropython.native
-    def scrollUp(self, n):
-        for i in range(len(self.frameBuffers)):
-            if (i+1) & self.selectedPlane > 0:
-                self.frameBuffers[i].scroll(0, -1 * n)
-
-    @micropython.native
-    def scrollLeft(self):
-        for i in range(len(self.frameBuffers)):
-            if (i+1) & self.selectedPlane > 0:
-                self.frameBuffers[i].scroll(-1, 0)
-
-    @micropython.native
-    def scrollRight(self):
-        for i in range(len(self.frameBuffers)):
-            if (i+1) & self.selectedPlane > 0:
-                self.frameBuffers[i].scroll(1, 0)
-
-    @micropython.native
-    def draw(self, x:int, y:int, n:int):
-        self.drawSprite(x, y, n)
-        self.dirty = True
-
-    @micropython.native
-    def drawSprite(self, x:int, y:int, n:int):
-        # Get real sprite position & height
-    	xPos:int = self.cpu.v[x] % self.width
-    	yPos:int = self.cpu.v[y] % self.height
-        height:int = n
-        if height == 0:
-            self.cpu.bumpSpecType(types.SCHIP)
-            height = 16
-
-        # TODO: 16 by 16 sprites
-
-        selPlane:int = int(self.selectedPlane)
-        sprite = self.cpu.ram[self.cpu.a(self.cpu.i):self.cpu.a(self.cpu.i + 16)]
-
-        for plane in range(1, 3):                   # Go through both planes
-            if plane & selPlane != 0:               # Only manipulate if this plane is currently selected
-                self.frameBuffers[plane-1].blit(
-                    FrameBuffer(sprite, 8, height, MONO_HLSB),
-                    xPos, yPos, 8, height
-                )
-
-        self.cpu.v[0xF] = 0 # Never a collision
-
-    @micropython.native
-    def setResolution(self, width, height):
-        self.width = width
-        self.height = height
-        self.clearPlanes(3)
