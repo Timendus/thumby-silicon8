@@ -21,6 +21,7 @@ def catalog():
                 "desc": "No additional information found",
                 "type": types.AUTO,
                 "disp": types.MONOCHROME,
+                "cmap": 0b10110100,
                 "keys": {
                     "up": 5,
                     "down": 8,

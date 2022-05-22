@@ -1,7 +1,7 @@
 import thumby
 import types
 import grayscale
-from framebuf import FrameBuffer, MONO_VLSB
+from framebuf import FrameBuffer, MONO_VLSB, MONO_HLSB
 
 #### Sound
 
@@ -18,6 +18,7 @@ def stopSound():
 
 class Display:
     def __init__(self):
+        self._colourMap = 0b00011011
         self._initMonochrome()
 
     def setType(self, type):
@@ -26,6 +27,9 @@ class Display:
         if type == types.MONOCHROME and self._dispType == types.GRAYSCALE:
             self._gs.stop()
             self._initMonochrome()
+
+    def setColourMap(self, map):
+        self._colourMap = map
 
     def stop(self):
         if self._dispType == types.GRAYSCALE:
@@ -57,33 +61,76 @@ class Display:
         self._dispType = types.GRAYSCALE
 
     @micropython.viper
-    def render(self, dispWidth:int, dispHeight:int, planeBuffers):
+    def render(self, display):
+        left:int   = (int(thumby.display.width) - int(display.width)) >> 1
+        top:int    = (int(thumby.display.height) - int(display.height)) >> 1
+        width:int  = min(int(display.width), int(thumby.display.width))
+        height:int = min(int(display.height), int(thumby.display.height))
+
         if self._dispType == types.MONOCHROME:
-            self._dispBuffer.blit(
-                planeBuffers[0],
-                (int(thumby.display.width) - dispWidth) >> 1,
-                (int(thumby.display.height) - dispHeight) >> 1,
-                min(dispWidth, thumby.display.width),
-                min(dispHeight, thumby.display.height)
-            )
-            thumby.display.update()
+            self._dispBuffer.blit(display.frameBuffers[0], left, top, width, height)
+            thumby.display.display.show()
 
         if self._dispType == types.GRAYSCALE:
-            self._dispBuffer1.blit(
-                planeBuffers[0],
-                (int(thumby.display.width) - dispWidth) >> 1,
-                (int(thumby.display.height) - dispHeight) >> 1,
-                min(dispWidth, thumby.display.width),
-                min(dispHeight, thumby.display.height)
-            )
-            self._dispBuffer2.blit(
-                planeBuffers[1],
-                (int(thumby.display.width) - dispWidth) >> 1,
-                (int(thumby.display.height) - dispHeight) >> 1,
-                min(dispWidth, thumby.display.width),
-                min(dispHeight, thumby.display.height)
-            )
+            buffer1, buffer2 = self._grayscaleTransform(display)
+            self._dispBuffer1.blit(buffer1, left, top, width, height)
+            self._dispBuffer2.blit(buffer2, left, top, width, height)
             self._gs._joinBuffers()
+
+    @micropython.viper
+    def _grayscaleTransform(self, display):
+        colourMap = int(self._colourMap)
+
+        if colourMap == 0b00011011:
+            return display.frameBuffers[0], display.frameBuffers[1]
+
+        if colourMap == 0b00100111:
+            return display.frameBuffers[1], display.frameBuffers[0]
+
+        srcBuf1:ptr8 = display.buffers[0]
+        srcBuf2:ptr8 = display.buffers[1]
+        size:int = int(len(srcBuf1))
+        width:int = int(display.width) // 8
+        destBuf1:ptr8 = bytearray(size)
+        destBuf2:ptr8 = bytearray(size)
+
+        # TODO: generate lookup from colourMap
+        lookup:ptr8 = [
+            # Plane 1
+            [
+                [ 0x00, 0xFF ], # 0x0X
+                [ 0xFF, 0x00 ]  # 0x1X
+            ],
+            # Plane 2
+            [
+                [ 0xFF, 0x00 ], # 0x0X
+                [ 0xFF, 0x00 ]  # 0x1X
+            ]
+        ]
+
+        mask:int = 0b10000000
+        while mask != 0:
+            for i in range(size):
+                i = int(i)
+
+                # Determine the 'colour' of the destination
+                inA:int = 1 if int(srcBuf1[i]) & mask else 0
+                inB:int = 1 if int(srcBuf2[i]) & mask else 0
+                outA:int = int(lookup[0][inA][inB])
+                outB:int = int(lookup[1][inA][inB])
+
+                # outA and outB are now either 0x00 or 0xFF to serve as a mask
+                # for the layers
+
+                destBuf1[i] = (int(destBuf1[i]) & (mask ^ 0xFF)) | (mask & outA)
+                destBuf2[i] = (int(destBuf2[i]) & (mask ^ 0xFF)) | (mask & outB)
+            mask = mask >> 1
+
+        fbuf1 = FrameBuffer(destBuf1, int(display.width), int(display.height), MONO_HLSB)
+        fbuf2 = FrameBuffer(destBuf2, int(display.width), int(display.height), MONO_HLSB)
+
+        return fbuf1, fbuf2
+
 
 display = Display()
 
