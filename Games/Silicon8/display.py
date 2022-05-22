@@ -18,7 +18,6 @@ class Display:
         self.waitForInt = 0
         self.initBuffers()
 
-    @micropython.native
     def initBuffers(self):
         self.buffers = [
             bytearray(int(self.width*self.height/8)),
@@ -35,17 +34,18 @@ class Display:
         self.waitForInt = 1
 
     # Clears currently selected plane
-    @micropython.native
+    @micropython.viper
     def clear(self):
         self.clearPlanes(self.selectedPlane)
 
     # Clears given planes
-    @micropython.native
+    @micropython.viper
     def clearPlanes(self, planes):
-        for i in range(len(self.buffers)):
-            if (i+1) & planes > 0:
-                for j in range(len(self.buffers[i])):
-                    self.buffers[i][j] = 0
+        buffers:ptr8 = self.buffers
+        for i in range(int(len(buffers))):
+            if (int(i)+1) & int(planes) > 0:
+                for j in range(int(len(buffers[i]))):
+                    buffers[int(i)][int(j)] = 0
         self.dirty = True
 
     @micropython.native
@@ -163,13 +163,11 @@ class Display:
 
         self.cpu.v[0xF] = 1 if erases else 0 # Set collision flag
 
-    @micropython.native
     def waitForInterrupt(self):
         self.waitForInt = 0
         while self.waitForInt == 0:
             time.sleep_ms(1)
 
-    @micropython.native
     def setResolution(self, width, height):
         self.width = width
         self.height = height
