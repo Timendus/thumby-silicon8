@@ -2,7 +2,7 @@ import random
 import thumbyinterface
 import types
 import time
-from display import AccurateDisplay
+from display import Display
 
 @micropython.viper
 def any(array) -> bool:
@@ -91,7 +91,7 @@ class CPU:
         self.v = bytearray(16)
         self.i = 0
         self.userFlags = bytearray(16)
-        self.display = AccurateDisplay(self)
+        self.display = Display(self)
         self.rendering = False
 
     def start(self):
