@@ -30,6 +30,22 @@ class Display:
 
     def setColourMap(self, map):
         self._colourMap = map
+        self._colourLookup:ptr8 = [ [ [0,0],[0,0] ], [ [0,0],[0,0] ] ]
+        for i in range(len(map)):
+            if map[i] == "B":
+                self._colourLookup[0][(i&2)>>1][i&1] = 0x00
+                self._colourLookup[1][(i&2)>>1][i&1] = 0x00
+            elif map[i] == "W":
+                self._colourLookup[0][(i&2)>>1][i&1] = 0xFF
+                self._colourLookup[1][(i&2)>>1][i&1] = 0xFF
+            elif map[i] == "L":
+                self._colourLookup[0][(i&2)>>1][i&1] = 0x00
+                self._colourLookup[1][(i&2)>>1][i&1] = 0xFF
+            elif map[i] == "D":
+                self._colourLookup[0][(i&2)>>1][i&1] = 0xFF
+                self._colourLookup[1][(i&2)>>1][i&1] = 0x00
+            else:
+                raise "Invalid colour character in cmap"
 
     def stop(self):
         if self._dispType == types.GRAYSCALE:
@@ -79,12 +95,12 @@ class Display:
 
     @micropython.viper
     def _grayscaleTransform(self, display):
-        colourMap = int(self._colourMap)
+        colourMap = self._colourMap
 
-        if colourMap == 0b00011011:
+        if colourMap == "BDLW":
             return display.frameBuffers[0], display.frameBuffers[1]
 
-        if colourMap == 0b00100111:
+        if colourMap == "BLDW":
             return display.frameBuffers[1], display.frameBuffers[0]
 
         srcBuf1:ptr8 = display.buffers[0]
@@ -93,20 +109,7 @@ class Display:
         width:int = int(display.width) // 8
         destBuf1:ptr8 = bytearray(size)
         destBuf2:ptr8 = bytearray(size)
-
-        # TODO: generate lookup from colourMap
-        lookup:ptr8 = [
-            # Plane 1
-            [
-                [ 0x00, 0xFF ], # 0x0X
-                [ 0xFF, 0x00 ]  # 0x1X
-            ],
-            # Plane 2
-            [
-                [ 0xFF, 0x00 ], # 0x0X
-                [ 0xFF, 0x00 ]  # 0x1X
-            ]
-        ]
+        lookup:ptr8 = self._colourLookup
 
         mask:int = 0b10000000
         while mask != 0:
