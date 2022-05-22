@@ -68,6 +68,7 @@ def runSilicon8():
     # Start the interpreter
     thumbyinterface.setKeys(program["keys"])
     thumbyinterface.display.setType(program["disp"])
+    thumbyinterface.display.setColourMap(program["cmap"])
     instance.reset(program["type"])
     thumby.display.fill(0)
     thumby.display.update()
