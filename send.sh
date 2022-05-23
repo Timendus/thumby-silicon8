@@ -42,4 +42,7 @@ function send {
 
 send "./Games/*"
 touch send.time
+
+echo "Running:"
+cat send.py
 ampy run send.py
