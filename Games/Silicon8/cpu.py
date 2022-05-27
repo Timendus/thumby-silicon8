@@ -104,6 +104,11 @@ class CPU:
     		self.RAMSize = CPU.XOCHIP_RAM_SIZE
     		self.stackSize = CPU.SCHIP_STACK_SIZE
 
+        # Initialize memory
+        self.ram = bytearray(self.RAMSize)
+        self.stack = [0] * self.stackSize
+        self.display.reset()
+
         # Initialize registers
         self.pc = 0x200
         self.sp = self.stackSize - 1
@@ -111,15 +116,10 @@ class CPU:
         self.st = 0
 
         # Initialize XO-Chip audio "registers"
-        self.pattern = [0] * 16
+        self.pattern = bytearray(16)
         self.pitch = 4000
         self.playingPattern = False
         self.audioDirty = False
-
-        # Initialize memory
-        self.display.reset()
-        self.stack = [0] * self.stackSize
-        self.ram = bytearray(self.RAMSize)
 
         # Initialize internal variables
         self.waitForKey = False
