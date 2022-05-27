@@ -1,6 +1,7 @@
 import types
 import os
 import ujson
+import files
 
 ROM_PATH = '/Games/Silicon8/chip8'
 
@@ -20,6 +21,8 @@ def catalog():
                 "name": file.replace('.ch8',''),
                 "desc": "No additional information found",
                 "type": types.AUTO,
+                "disp": types.MONOCHROME,
+                "cmap": "LDWB",
                 "keys": {
                     "up": 5,
                     "down": 8,
@@ -37,6 +40,8 @@ def catalog():
                         config = ujson.load(stream)
                         if "type" in config:
                             config["type"] = types.parseType(config["type"])
+                        if "disp" in config:
+                            config["disp"] = types.parseDisp(config["disp"])
                         defaults.update(config)
                 except ValueError as err:
                     print('JSON parse error for ' + configFile + ':', err)
@@ -50,10 +55,5 @@ def catalog():
     catalog.sort(key=lambda p: p["name"])
     return catalog
 
-def load(entry):
-    try:
-        with open(ROM_PATH + '/' + entry["file"], 'rb') as stream:
-            bytes = bytearray(stream.read(-1))
-            return bytes
-    except IOError as err:
-        print('Could not read CH8 file ' + file + ':', err)
+def loadinto(entry, memory):
+    return files.loadinto(ROM_PATH + '/' + entry["file"], memory)

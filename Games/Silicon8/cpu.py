@@ -2,7 +2,8 @@ import random
 import thumbyinterface
 import types
 import time
-from display import AccurateDisplay
+import files
+from display import Display
 
 @micropython.viper
 def any(array) -> bool:
@@ -23,75 +24,13 @@ class CPU:
     DEFAULT_STACK_SIZE = const(12)
     SCHIP_STACK_SIZE   = const(16)  # According to http://devernay.free.fr/hacks/chip8/schip.txt: "Subroutine nesting is limited to 16 levels"
 
-    # Font definitions for the interpreter built in fonts
-
-    chip8Font = (
-        0b11110000, 0b10010000, 0b10010000, 0b10010000, 0b11110000,
-        0b01100000, 0b00100000, 0b00100000, 0b00100000, 0b01110000,
-        0b11110000, 0b00010000, 0b11110000, 0b10000000, 0b11110000,
-        0b11110000, 0b00010000, 0b01110000, 0b00010000, 0b11110000,
-        0b10100000, 0b10100000, 0b11110000, 0b00100000, 0b00100000,
-        0b11110000, 0b10000000, 0b11110000, 0b00010000, 0b11110000,
-        0b11110000, 0b10000000, 0b11110000, 0b10010000, 0b11110000,
-        0b11110000, 0b00010000, 0b00010000, 0b00010000, 0b00010000,
-        0b11110000, 0b10010000, 0b11110000, 0b10010000, 0b11110000,
-        0b11110000, 0b10010000, 0b11110000, 0b00010000, 0b11110000,
-        0b11110000, 0b10010000, 0b11110000, 0b10010000, 0b10010000,
-        0b11110000, 0b01010000, 0b01110000, 0b01010000, 0b11110000,
-        0b11110000, 0b10000000, 0b10000000, 0b10000000, 0b11110000,
-        0b11110000, 0b01010000, 0b01010000, 0b01010000, 0b11110000,
-        0b11110000, 0b10000000, 0b11110000, 0b10000000, 0b11110000,
-        0b11110000, 0b10000000, 0b11110000, 0b10000000, 0b10000000,
-
-        0b00111100, 0b01111110, 0b11100111, 0b11000011, 0b11000011, 0b11000011, 0b11000011, 0b11100111, 0b01111110, 0b00111100,
-        0b00011000, 0b00111000, 0b01011000, 0b00011000, 0b00011000, 0b00011000, 0b00011000, 0b00011000, 0b00011000, 0b00111100,
-        0b00111110, 0b01111111, 0b11000011, 0b00000110, 0b00001100, 0b00011000, 0b00110000, 0b01100000, 0b11111111, 0b11111111,
-        0b00111100, 0b01111110, 0b11000011, 0b00000011, 0b00001110, 0b00001110, 0b00000011, 0b11000011, 0b01111110, 0b00111100,
-        0b00000110, 0b00001110, 0b00011110, 0b00110110, 0b01100110, 0b11000110, 0b11111111, 0b11111111, 0b00000110, 0b00000110,
-        0b11111111, 0b11111111, 0b11000000, 0b11000000, 0b11111100, 0b11111110, 0b00000011, 0b11000011, 0b01111110, 0b00111100,
-        0b00111110, 0b01111100, 0b11100000, 0b11000000, 0b11111100, 0b11111110, 0b11000011, 0b11000011, 0b01111110, 0b00111100,
-        0b11111111, 0b11111111, 0b00000011, 0b00000110, 0b00001100, 0b00011000, 0b00110000, 0b01100000, 0b01100000, 0b01100000,
-        0b00111100, 0b01111110, 0b11000011, 0b11000011, 0b01111110, 0b01111110, 0b11000011, 0b11000011, 0b01111110, 0b00111100,
-        0b00111100, 0b01111110, 0b11000011, 0b11000011, 0b01111111, 0b00111111, 0b00000011, 0b00000011, 0b00111110, 0b01111100,
-    )
-
-    schipFont = (
-        0b11110000, 0b10010000, 0b10010000, 0b10010000, 0b11110000,
-        0b00100000, 0b01100000, 0b00100000, 0b00100000, 0b01110000,
-        0b11110000, 0b00010000, 0b11110000, 0b10000000, 0b11110000,
-        0b11110000, 0b00010000, 0b01110000, 0b00010000, 0b11110000,
-        0b10010000, 0b10010000, 0b11110000, 0b00010000, 0b00010000,
-        0b11110000, 0b10000000, 0b11110000, 0b00010000, 0b11110000,
-        0b11110000, 0b10000000, 0b11110000, 0b10010000, 0b11110000,
-        0b11110000, 0b00010000, 0b00100000, 0b01000000, 0b01000000,
-        0b11110000, 0b10010000, 0b11110000, 0b10010000, 0b11110000,
-        0b11110000, 0b10010000, 0b11110000, 0b00010000, 0b11110000,
-        0b11110000, 0b10010000, 0b11110000, 0b10010000, 0b10010000,
-        0b11100000, 0b10010000, 0b11100000, 0b10010000, 0b11100000,
-        0b11110000, 0b10000000, 0b10000000, 0b10000000, 0b11110000,
-        0b11100000, 0b10010000, 0b10010000, 0b10010000, 0b11100000,
-        0b11110000, 0b10000000, 0b11110000, 0b10000000, 0b11110000,
-        0b11110000, 0b10000000, 0b11110000, 0b10000000, 0b10000000,
-
-        0b00111100, 0b01111110, 0b11100111, 0b11000011, 0b11000011, 0b11000011, 0b11000011, 0b11100111, 0b01111110, 0b00111100,
-        0b00011000, 0b00111000, 0b01011000, 0b00011000, 0b00011000, 0b00011000, 0b00011000, 0b00011000, 0b00011000, 0b00111100,
-        0b00111110, 0b01111111, 0b11000011, 0b00000110, 0b00001100, 0b00011000, 0b00110000, 0b01100000, 0b11111111, 0b11111111,
-        0b00111100, 0b01111110, 0b11000011, 0b00000011, 0b00001110, 0b00001110, 0b00000011, 0b11000011, 0b01111110, 0b00111100,
-        0b00000110, 0b00001110, 0b00011110, 0b00110110, 0b01100110, 0b11000110, 0b11111111, 0b11111111, 0b00000110, 0b00000110,
-        0b11111111, 0b11111111, 0b11000000, 0b11000000, 0b11111100, 0b11111110, 0b00000011, 0b11000011, 0b01111110, 0b00111100,
-        0b00111110, 0b01111100, 0b11100000, 0b11000000, 0b11111100, 0b11111110, 0b11000011, 0b11000011, 0b01111110, 0b00111100,
-        0b11111111, 0b11111111, 0b00000011, 0b00000110, 0b00001100, 0b00011000, 0b00110000, 0b01100000, 0b01100000, 0b01100000,
-        0b00111100, 0b01111110, 0b11000011, 0b11000011, 0b01111110, 0b01111110, 0b11000011, 0b11000011, 0b01111110, 0b00111100,
-        0b00111100, 0b01111110, 0b11000011, 0b11000011, 0b01111111, 0b00111111, 0b00000011, 0b00000011, 0b00111110, 0b01111100,
-    )
-
     def __init__(self):
         # CHIP-8 interpreter state that isn't initialized elsewhere
         self.stop()
         self.v = bytearray(16)
         self.i = 0
         self.userFlags = bytearray(16)
-        self.display = AccurateDisplay(self)
+        self.display = Display(self)
         self.rendering = False
 
     def start(self):
@@ -130,20 +69,17 @@ class CPU:
         # few CPU cycles)
         self.rendering = not self.rendering
         if self.display.dirty and self.rendering:
-            thumbyinterface.render(self.display.width, self.display.height, self.display.frameBuffers)
+            thumbyinterface.display.render(self.display)
             self.display.dirty = False
 
         # Register display redraw interrupt for dispQuirk
         self.display.interrupt()
 
     @micropython.viper
-    def run(self, program):
-        ram = ptr8(self.ram)
-        prog = ptr8(program)
-        for i in range(int(len(program))):
-            ram[i + 0x200] = prog[i]
+    def run(self):
         while self.running and not thumbyinterface.breakCombo():
             self.cycle()
+        thumbyinterface.display.stop()
 
     def reset(self, interpreter):
         self.stop()
@@ -168,6 +104,11 @@ class CPU:
     		self.RAMSize = CPU.XOCHIP_RAM_SIZE
     		self.stackSize = CPU.SCHIP_STACK_SIZE
 
+        # Initialize memory
+        self.ram = bytearray(self.RAMSize)
+        self.stack = [0] * self.stackSize
+        self.display.reset()
+
         # Initialize registers
         self.pc = 0x200
         self.sp = self.stackSize - 1
@@ -175,15 +116,10 @@ class CPU:
         self.st = 0
 
         # Initialize XO-Chip audio "registers"
-        self.pattern = [0] * 16
+        self.pattern = bytearray(16)
         self.pitch = 4000
         self.playingPattern = False
         self.audioDirty = False
-
-        # Initialize memory
-        self.display.reset()
-        self.stack = [0] * self.stackSize
-        self.ram = bytearray(self.RAMSize)
 
         # Initialize internal variables
         self.waitForKey = False
@@ -535,10 +471,8 @@ class CPU:
             self.v[0xF] = 1
 
     def loadFont(self):
+        myPath = "/".join(__file__.split("/")[0:-1])
         if self.specType == types.SCHIP or self.specType == types.XOCHIP:
-            font = CPU.schipFont
+            files.loadinto(myPath + '/assets/schipfont.bin', self.ram)
         else:
-            font = CPU.chip8Font
-
-        for i in range(len(font)):
-            self.ram[i] = font[i];
+            files.loadinto(myPath + '/assets/chip8font.bin', self.ram)
