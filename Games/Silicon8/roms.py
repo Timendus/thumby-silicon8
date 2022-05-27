@@ -1,6 +1,7 @@
 import types
 import os
 import ujson
+import files
 
 ROM_PATH = '/Games/Silicon8/chip8'
 
@@ -55,14 +56,4 @@ def catalog():
     return catalog
 
 def loadinto(entry, memory):
-    try:
-        file = open(ROM_PATH + '/' + entry["file"], 'rb')
-        file.seek(0,2)
-        size = file.tell()
-        if size > len(memory):
-            return -1
-        file.seek(0)
-        file.readinto(memory)
-        return size
-    except Exception as err:
-        print('Could not read CH8 file ' + entry["file"] + ':', err)
+    return files.loadinto(ROM_PATH + '/' + entry["file"], memory)
