@@ -41,9 +41,15 @@ index = 0
 scroll = 0
 
 def gb_collect():
-    print("Free memory before garbage collect:", gc.mem_free())
+    a1 = gc.mem_alloc()
+    f1 = gc.mem_free()
     gc.collect()
-    print("Free memory after garbage collect:", gc.mem_free())
+    a2 = gc.mem_alloc()
+    f2 = gc.mem_free()
+    print("### \t\tUsed\t\tAllocated\tFree")
+    print("# Before gc\t{}%\t{}\t\t{}".format(a1/(a1+f1)*100, a1, f1))
+    print("# After gc\t{}%\t{}\t\t{}".format(a2/(a2+f2)*100, a2, f2))
+    print("# => Freed {} bytes ({}%)".format(f2-f1, (f2-f1)/(a2+f2)))
 
 def runSilicon8():
     global index, scroll
