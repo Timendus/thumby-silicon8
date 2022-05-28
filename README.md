@@ -41,13 +41,17 @@ into trouble.
 
 ## Installation
 
-I'll request to add Silicon8 to the Thumby "Arcade" once it has been properly
-tested on the physical product. You will then be able to install it with a
-couple of clicks.
+Silicon8 is in the Thumby "Arcade". You can install it with a couple of clicks
+by going to [arcade.thumby.us](https://arcade.thumby.us).
 
-Untill then, you will have to manually get the MicroPython files from this
-repository and put them in `/Games/Silicon8` on your Thumby using the [Thumby
-Code Editor](https://code.thumby.us/):
+However, the arcade sometimes glitches out, in which case you follow the steps
+below to install Silicon8 manually on your device.
+
+Get the MicroPython files from this Github repository if you know your way
+around git or download the ZIP file for the latest version on the [releases
+page](https://github.com/Timendus/thumby-silicon8/releases). Put the `*.py`
+files in `/Games/Silicon8` on your Thumby using the [Thumby Code
+Editor](https://code.thumby.us/):
 
 1. Connect your Thumby, wait for the file system tree to load
 2. Right-click on "Games" in the file system tree and select "New folder"
