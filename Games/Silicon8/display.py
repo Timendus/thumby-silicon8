@@ -166,7 +166,7 @@ class Display:
     def waitForInterrupt(self):
         self.waitForInt = 0
         while self.waitForInt == 0:
-            time.sleep_ms(1)
+            time.sleep_us(1)
 
     def setResolution(self, width, height):
         self.width = width
