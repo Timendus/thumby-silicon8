@@ -3,6 +3,7 @@
 # This sends Silicon8 to your Thumby, and launches it.
 # It only sends files modified since the last send to your Tumby to save time.
 # Works on Mac, depends on Ampy being installed.
+# See: https://github.com/scientifichackers/ampy
 
 TIME="send.time"
 export AMPY_PORT=`ls /dev/tty.usbmodem*`
