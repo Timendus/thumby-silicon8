@@ -7,6 +7,8 @@
 # See https://github.com/Timendus/thumby-silicon8 for more information and
 # licensing information.
 
+import machine
+machine.freq(125000000)
 import thumby
 
 # Stop sound and show splash while we wait ;)
@@ -22,7 +24,6 @@ sys.path.insert(0, '/Games/Silicon8')
 
 import time
 import gc
-import machine
 import thumbyinterface
 import roms
 import cpu
