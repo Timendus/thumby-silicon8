@@ -1,6 +1,5 @@
 import thumby
 import types
-import grayscale
 from framebuf import FrameBuffer, MONO_VLSB, MONO_HLSB
 
 #### Sound
@@ -61,6 +60,7 @@ class Display:
         self._dispType = types.MONOCHROME
 
     def _initGrayscale(self):
+        import grayscale
         self._gs = grayscale.Grayscale()
         self._dispBuffer1 = FrameBuffer(
             self._gs.gsBuffer1.buffer,
