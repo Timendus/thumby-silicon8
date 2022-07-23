@@ -20,7 +20,7 @@ class CPU:
     # Some static constants
 
     VIP_SCHIP_RAM_SIZE = const(3583 + 512)
-    XOCHIP_RAM_SIZE    = const(65023 + 512)
+    XOCHIP_RAM_SIZE    = const(65024 + 512)
     DEFAULT_STACK_SIZE = const(12)
     SCHIP_STACK_SIZE   = const(16)  # According to http://devernay.free.fr/hacks/chip8/schip.txt: "Subroutine nesting is limited to 16 levels"
 
