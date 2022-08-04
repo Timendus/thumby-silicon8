@@ -1,5 +1,6 @@
 {
-  "name": "Snake",
+  "name": "Snake (Timo Triisa, 2014)",
+  "link": "https://github.com/JohnEarnest/chip8Archive/tree/master/src/snake",
   "desc": "A very minimalistic implementation of the popular game Snake. Eat the apples to grow the snake, but be careful that you don't hit your tail!\n\nMove the snake around using UP, DOWN, LEFT and RIGHT.",
   "type": "VIP",
   "keys": {
