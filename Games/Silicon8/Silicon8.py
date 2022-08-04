@@ -108,8 +108,6 @@ if autorun:
 
     # Load program file directly into memory, unless it doesn't fit
     memory = memoryview(instance.ram)
-    memory[0x1FF] = 5
-    memory[0x1FE] = 3
     if loadinto(program, memory[512:]) == -1:
         print("Not enough CHIP-8 RAM to load the program")
         resetToMenu()
