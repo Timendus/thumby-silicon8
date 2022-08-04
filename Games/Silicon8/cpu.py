@@ -1,7 +1,7 @@
 import random
 import thumbyinterface
 import types
-import time
+import utime
 import files
 from display import Display
 
@@ -40,7 +40,7 @@ class CPU:
     	self.running = False
 
     @micropython.native
-    def clockTick(self, t):
+    def clockTick(self):
         if not self.running:
             return
 
@@ -73,12 +73,21 @@ class CPU:
             self.display.dirty = False
 
         # Register display redraw interrupt for dispQuirk
-        self.display.interrupt()
+        self.waitForInt = False
 
     @micropython.viper
     def run(self):
+        elapsed:int; now:int
+        t0:int = int(utime.ticks_us())
         while self.running and not thumbyinterface.breakCombo():
             self.cycle()
+
+            now = int(utime.ticks_us())
+            elapsed = int(utime.ticks_diff(now, t0))
+            if elapsed > 16667:
+                t0 = now - (elapsed - 16667)
+                self.clockTick()
+
         thumbyinterface.display.stop()
 
     def reset(self, interpreter):
@@ -122,8 +131,8 @@ class CPU:
         self.audioDirty = False
 
         # Initialize internal variables
-        self.waitForKey = False
-        self.WaitForInt = 0
+        self.waitForKey = 0
+        self.waitForInt = False
         self.playing = False
         self.running = True
         self.cyclesPerFrame = 30
@@ -192,7 +201,11 @@ class CPU:
             # Set register to random number
             self.v[x] = random.randint(0, 255) & nn
         elif check == 0xD000:
+            if self.dispQuirk and self.waitForInt:
+                self.pc -= 2
+                return
             self.display.draw(x, y, n)
+            self.waitForInt = True
         elif check == 0xE000:
             if nn == 0x9E:
                 if thumbyinterface.getKeys()[self.v[x]]:
@@ -275,20 +288,7 @@ class CPU:
             self.v[x] = self.dt
         elif nn == 0x0A:
             # Wait for keypress and return key in vX
-            while True:
-                keyboard = thumbyinterface.getKeys()
-                if not any(keyboard):
-                    break
-                time.sleep_ms(1)
-            while True:
-                keyboard = thumbyinterface.getKeys()
-                if any(keyboard):
-                    break
-                time.sleep_ms(1)
-            for i in range(len(keyboard)):
-                if keyboard[i]:
-                    self.v[x] = i
-                    return
+            self.getKey(x)
         elif nn == 0x15:
             # Set delay timer to value in vX
             self.dt = self.v[x]
@@ -298,6 +298,27 @@ class CPU:
         elif nn == 0x1E:
             # Add vX to i register
             self.i += self.v[x] & 0xFFFF
+
+    # Wait for keypress and return key in vX
+    def getKey(self, x):
+        keyboard = thumbyinterface.getKeys()
+        if self.waitForKey == 0:
+            self.pc -= 2
+            if not any(keyboard):
+                self.waitForKey = 1
+        elif self.waitForKey == 1:
+            self.pc -= 2
+            if any(keyboard):
+                self.waitForKey = 2
+                for i in range(len(keyboard)):
+                    if keyboard[i]:
+                        self.v[x] = i
+                        break
+        elif self.waitForKey == 2:
+            if not any(keyboard):
+                self.waitForKey = 0
+            else:
+                self.pc -= 2
 
     @micropython.native
     def opcodesFX29andUp(self, nn:int, x:int):

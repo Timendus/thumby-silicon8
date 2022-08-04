@@ -15,7 +15,6 @@ class Display:
         self.numPlanes = 1
         self.selectedPlane = 1
         self.dirty = True
-        self.waitForInt = 0
         self.initBuffers()
 
     def initBuffers(self):
@@ -27,11 +26,6 @@ class Display:
             FrameBuffer(self.buffers[0], self.width, self.height, MONO_HLSB),
             FrameBuffer(self.buffers[1], self.width, self.height, MONO_HLSB)
         ]
-
-    # Called by 60Hz interrupt timer for dispQuirk
-    @micropython.native
-    def interrupt(self):
-        self.waitForInt = 1
 
     # Clears currently selected plane
     @micropython.viper
@@ -93,8 +87,6 @@ class Display:
 
     @micropython.native
     def draw(self, x:int, y:int, n:int):
-        if self.cpu.dispQuirk:
-            self.waitForInterrupt()
         self.drawSprite(x, y, n)
         self.dirty = True
 
@@ -162,11 +154,6 @@ class Display:
                 bufIndx += width >> 3
 
         self.cpu.v[0xF] = 1 if erases else 0 # Set collision flag
-
-    def waitForInterrupt(self):
-        self.waitForInt = 0
-        while self.waitForInt == 0:
-            time.sleep_us(1)
 
     def setResolution(self, width, height):
         self.width = width

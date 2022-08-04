@@ -22,7 +22,6 @@ thumby.display.update()
 import sys
 sys.path.insert(0, '/Games/Silicon8')
 
-import time
 import gc
 import thumbyinterface
 import roms
@@ -55,19 +54,23 @@ def runSilicon8():
             return False
         if menu.Confirm().choose(program):
             break
+    return runProgram(program)
 
+def runProgram(program):
     gb_collect()
+    instance = cpu.CPU()  # Instantiate interpreter
 
-    # Instantiate interpreter
-    instance = cpu.CPU()
+    # Start the display, which may start a grayscale thread
+    try:
+        thumbyinterface.display.start(program["disp"])
+    except NotImplementedError as err:
+        # User is not on at least MicroPython v1.19.1, and grayscale library
+        # can't run. This should be handled more gracefully, but for now, print.
+        print(err)
+        return True
 
-    # Set up 60Hz interrupt handler
-    timer = machine.Timer()
-    timer.init(mode=timer.PERIODIC, period=17, callback=instance.clockTick)
-
-    # Start the interpreter
+    # Initialize the rest of the interpreter
     thumbyinterface.setKeys(program["keys"])
-    thumbyinterface.display.setType(program["disp"])
     thumbyinterface.display.setColourMap(program["cmap"])
     instance.reset(program["type"])
     thumby.display.fill(0)
@@ -78,7 +81,9 @@ def runSilicon8():
     if roms.loadinto(program, memory[512:]) == -1:
         return False
 
-    instance.run()
+    gb_collect()
+    instance.run()  # This will block as long as the program is running
+
     return True
 
 while runSilicon8():
