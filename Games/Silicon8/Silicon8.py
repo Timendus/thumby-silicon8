@@ -23,12 +23,16 @@ import sys
 sys.path.insert(0, '/Games/Silicon8')
 
 import gc
-import thumbyinterface
-import roms
-import cpu
-import menu
-
+gc.threshold(2000)
 gc.enable()
+import thumbyinterface
+gc.collect()
+import roms
+gc.collect()
+import cpu
+gc.collect()
+import menu
+gc.collect()
 
 index = 0
 scroll = 0
