@@ -1,16 +1,19 @@
-import thumby
-import types
+from thumbyGraphics import display as thumbyDisp
+from thumbyAudio import audio
+from thumbyButton import buttonA, buttonB, buttonU, buttonD, buttonL, buttonR
 from framebuf import FrameBuffer, MONO_VLSB, MONO_HLSB
+import types
 
 #### Sound
 
 @micropython.native
 def playSound(playingPattern, pattern, pitch):
-    thumby.audio.play(400, 5000)
+    if not playingPattern:
+        audio.play(400, 5000)
 
 @micropython.native
 def stopSound():
-    thumby.audio.stop()
+    audio.stop()
 
 
 #### Display
@@ -51,9 +54,9 @@ class Display:
 
     def _initMonochrome(self):
         self._dispBuffer = FrameBuffer(
-            thumby.display.display.buffer,
-            thumby.display.width,
-            thumby.display.height,
+            thumbyDisp.display.buffer,
+            thumbyDisp.width,
+            thumbyDisp.height,
             MONO_VLSB
         )
 
@@ -74,36 +77,36 @@ class Display:
         )
 
     @micropython.viper
-    def render(self, display):
-        left:int   = (int(thumby.display.width) - int(display.width)) >> 1
-        top:int    = (int(thumby.display.height) - int(display.height)) >> 1
-        width:int  = min(int(display.width), int(thumby.display.width))
-        height:int = min(int(display.height), int(thumby.display.height))
+    def render(self, chipDisp):
+        left:int   = (int(thumbyDisp.width) - int(chipDisp.width)) >> 1
+        top:int    = (int(thumbyDisp.height) - int(chipDisp.height)) >> 1
+        width:int  = min(int(chipDisp.width), int(thumbyDisp.width))
+        height:int = min(int(chipDisp.height), int(thumbyDisp.height))
 
         if self._dispType == types.MONOCHROME:
-            self._dispBuffer.blit(display.frameBuffers[0], left, top, width, height)
-            thumby.display.display.show()
+            self._dispBuffer.blit(chipDisp.frameBuffers[0], left, top, width, height)
+            thumbyDisp.display.show()
 
         if self._dispType == types.GRAYSCALE:
-            buffer1, buffer2 = self._grayscaleTransform(display)
+            buffer1, buffer2 = self._grayscaleTransform(chipDisp)
             self._dispBuffer1.blit(buffer2, left, top, width, height)
             self._dispBuffer2.blit(buffer1, left, top, width, height)
             self._gs.show()
 
     @micropython.viper
-    def _grayscaleTransform(self, display):
+    def _grayscaleTransform(self, chipDisp):
         colourMap = self._colourMap
 
         if colourMap == "BDLW":
-            return display.frameBuffers[0], display.frameBuffers[1]
+            return chipDisp.frameBuffers[0], chipDisp.frameBuffers[1]
 
         if colourMap == "BLDW":
-            return display.frameBuffers[1], display.frameBuffers[0]
+            return chipDisp.frameBuffers[1], chipDisp.frameBuffers[0]
 
-        srcBuf1:ptr8 = display.buffers[0]
-        srcBuf2:ptr8 = display.buffers[1]
+        srcBuf1:ptr8 = chipDisp.buffers[0]
+        srcBuf2:ptr8 = chipDisp.buffers[1]
         size:int = int(len(srcBuf1))
-        width:int = int(display.width) // 8
+        width:int = int(chipDisp.width) // 8
         destBuf1:ptr8 = bytearray(size)
         destBuf2:ptr8 = bytearray(size)
         lookup:ptr8 = self._colourLookup
@@ -126,13 +129,13 @@ class Display:
                 destBuf2[i] = (int(destBuf2[i]) & (mask ^ 0xFF)) | (mask & outB)
             mask = mask >> 1
 
-        fbuf1 = FrameBuffer(destBuf1, int(display.width), int(display.height), MONO_HLSB)
-        fbuf2 = FrameBuffer(destBuf2, int(display.width), int(display.height), MONO_HLSB)
+        fbuf1 = FrameBuffer(destBuf1, int(chipDisp.width), int(chipDisp.height), MONO_HLSB)
+        fbuf2 = FrameBuffer(destBuf2, int(chipDisp.width), int(chipDisp.height), MONO_HLSB)
 
         return fbuf1, fbuf2
 
-
 display = Display()
+
 
 #### Key input
 
@@ -147,20 +150,20 @@ def setKeys(keys):
 def getKeys():
     keyboard = bytearray(16)
     if "up" in keymap:
-        keyboard[keymap["up"]]    |= thumby.buttonU.pressed()
+        keyboard[keymap["up"]]    |= buttonU.pressed()
     if "down" in keymap:
-        keyboard[keymap["down"]]  |= thumby.buttonD.pressed()
+        keyboard[keymap["down"]]  |= buttonD.pressed()
     if "left" in keymap:
-        keyboard[keymap["left"]]  |= thumby.buttonL.pressed()
+        keyboard[keymap["left"]]  |= buttonL.pressed()
     if "right" in keymap:
-        keyboard[keymap["right"]] |= thumby.buttonR.pressed()
+        keyboard[keymap["right"]] |= buttonR.pressed()
     if "a" in keymap:
-        keyboard[keymap["a"]]     |= thumby.buttonA.pressed()
+        keyboard[keymap["a"]]     |= buttonA.pressed()
     if "b" in keymap:
-        keyboard[keymap["b"]]     |= thumby.buttonB.pressed()
+        keyboard[keymap["b"]]     |= buttonB.pressed()
     return keyboard
 
 # Key combination to quit the running program
 @micropython.viper
 def breakCombo():
-    return thumby.buttonL.pressed() and thumby.buttonA.pressed() and thumby.buttonB.pressed()
+    return buttonL.pressed() and buttonA.pressed() and buttonB.pressed()

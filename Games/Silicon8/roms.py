@@ -1,13 +1,13 @@
 import types
-import os
-import ujson
+from os import listdir
+from ujson import load
 import files
 
 ROM_PATH = '/Games/Silicon8/chip8'
 
 def catalog():
     try:
-        files = os.listdir(ROM_PATH)
+        files = listdir(ROM_PATH)
     except OSError as err:
         print("ROMs directory not found! Does '"+ROM_PATH+"' exist?", err)
         return [{
@@ -48,7 +48,7 @@ def loadFile(file):
     configFile = file.replace('.ch8', '.ch8.json')
     try:
         with open(ROM_PATH + '/' + configFile, 'r') as stream:
-            config = ujson.load(stream)
+            config = load(stream)
             if "type" in config:
                 config["type"] = types.parseType(config["type"])
             if "disp" in config:

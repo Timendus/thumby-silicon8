@@ -1,9 +1,10 @@
-import random
+from random import randint
 import thumbyinterface
-import types
-import utime
-import files
+from types import AUTO, VIP, SCHIP, XOCHIP
+from utime import ticks_us, ticks_diff
+from files import loadinto
 from display import Display
+from gc import collect
 
 @micropython.viper
 def any(array) -> bool:
@@ -78,38 +79,39 @@ class CPU:
     @micropython.viper
     def run(self):
         elapsed:int; now:int
-        t0:int = int(utime.ticks_us())
+        t0:int = int(ticks_us())
         while self.running and not thumbyinterface.breakCombo():
             self.cycle()
 
-            now = int(utime.ticks_us())
-            elapsed = int(utime.ticks_diff(now, t0))
+            now = int(ticks_us())
+            elapsed = int(ticks_diff(now, t0))
             if elapsed > 16667:
                 t0 = now - (elapsed - 16667)
                 self.clockTick()
+                collect()
 
         thumbyinterface.display.stop()
 
     def reset(self, interpreter):
         self.stop()
 
-        if interpreter != types.AUTO:
+        if interpreter != AUTO:
             self.specType = interpreter
             self.typeFixed = True
         else:
-            self.specType = types.VIP
+            self.specType = VIP
             self.typeFixed = False
 
-        if interpreter == types.VIP:
+        if interpreter == VIP:
         	self.RAMSize = CPU.VIP_SCHIP_RAM_SIZE
     		self.stackSize = CPU.DEFAULT_STACK_SIZE
-    	elif interpreter == types.SCHIP:
+    	elif interpreter == SCHIP:
     		self.RAMSize = CPU.VIP_SCHIP_RAM_SIZE
     		self.stackSize = CPU.SCHIP_STACK_SIZE
-    	elif interpreter == types.XOCHIP:
+    	elif interpreter == XOCHIP:
     		self.RAMSize = CPU.XOCHIP_RAM_SIZE
     		self.stackSize = CPU.DEFAULT_STACK_SIZE
-    	elif interpreter == types.AUTO: # Takes maximum sizes, determines limits at runtime
+    	elif interpreter == AUTO: # Takes maximum sizes, determines limits at runtime
     		self.RAMSize = CPU.XOCHIP_RAM_SIZE
     		self.stackSize = CPU.SCHIP_STACK_SIZE
 
@@ -146,12 +148,12 @@ class CPU:
         self.start()
 
     def setQuirks(self):
-        self.shiftQuirk = self.specType == types.SCHIP
-        self.jumpQuirk = self.specType == types.SCHIP
-        self.memQuirk = self.specType != types.SCHIP
-        self.vfQuirk = self.specType == types.VIP
-        self.clipQuirk = self.specType != types.XOCHIP
-        self.dispQuirk = self.specType == types.VIP
+        self.shiftQuirk = self.specType == SCHIP
+        self.jumpQuirk = self.specType == SCHIP
+        self.memQuirk = self.specType != SCHIP
+        self.vfQuirk = self.specType == VIP
+        self.clipQuirk = self.specType != XOCHIP
+        self.dispQuirk = self.specType == VIP
 
     @micropython.native
     def bumpSpecType(self, newType):
@@ -160,9 +162,9 @@ class CPU:
         if newType > self.specType:
             self.specType = newType
             self.setQuirks()
-            if newType == types.SCHIP:
+            if newType == SCHIP:
                 print("Auto-upgraded interpreter to SCHIP")
-            elif newType == types.XOCHIP:
+            elif newType == XOCHIP:
                 print("Auto-upgraded interpreter to XOCHIP")
 
     # Run the CPU for one cycle and return control
@@ -199,7 +201,7 @@ class CPU:
                 self.pc = nnn + self.v[0]
         elif check == 0xC000:
             # Set register to random number
-            self.v[x] = random.randint(0, 255) & nn
+            self.v[x] = randint(0, 255) & nn
         elif check == 0xD000:
             if self.dispQuirk and self.waitForInt:
                 self.pc -= 2
@@ -247,12 +249,12 @@ class CPU:
                 # Store range of registers to memory
                 for i in range(x, y + 1):
                     self.ram[self.a(self.i+(i-x))] = self.v[i]
-                self.bumpSpecType(types.XOCHIP)
+                self.bumpSpecType(XOCHIP)
             elif n == 3:
                 # Load range of registers from memory
                 for i in range(x, y + 1):
                     self.v[i] = self.ram[self.a(self.i+(i-x))]
-                self.bumpSpecType(types.XOCHIP)
+                self.bumpSpecType(XOCHIP)
             else:
                 if self.v[x] == self.v[y]:
                     self.skipNextInstruction()
@@ -269,20 +271,20 @@ class CPU:
             # Set i register to 16-bit value
             self.i = self.ram[self.a(self.pc)]<<8 | self.ram[self.a(self.pc+1)]
             self.pc += 2
-            self.bumpSpecType(types.XOCHIP)
+            self.bumpSpecType(XOCHIP)
         elif nn == 0x01:
             # Enable the second plane if it hasn't been enabled yet
             self.display.numPlanes = 2
             # Select plane X
             self.display.selectedPlane = x
-            self.bumpSpecType(types.XOCHIP)
+            self.bumpSpecType(XOCHIP)
         elif nn == 0x02:
             # XO-Chip: Load 16 bytes of audio buffer from (i)
             for i in range(0, 16):
                 self.pattern[i] = self.ram[self.a(self.i+i)]
             self.playingPattern = True
             self.audioDirty = True
-            self.bumpSpecType(types.XOCHIP)
+            self.bumpSpecType(XOCHIP)
         elif nn == 0x07:
             # Set register to value of delay timer
             self.v[x] = self.dt
@@ -328,7 +330,7 @@ class CPU:
         elif nn == 0x30:
             # Set i register to large font data
             self.i = self.v[x]*10 + 80
-            self.bumpSpecType(types.SCHIP)
+            self.bumpSpecType(SCHIP)
         elif nn == 0x33:
             # Binary coded decimal from vX to address in i
             self.ram[self.a(self.i+0)] = int(self.v[x] / 100)
@@ -339,7 +341,7 @@ class CPU:
             self.pitch = 4000 * pow(2, (self.v[x]-64)/48)
             self.playingPattern = True
             self.audioDirty = True
-            self.bumpSpecType(types.XOCHIP)
+            self.bumpSpecType(XOCHIP)
         elif nn == 0x55:
             # Store registers to memory (regular VIP/SCHIP)
             for i in range(0, x + 1):
@@ -356,23 +358,23 @@ class CPU:
             # Store registers to "user flags" (SCHIP)
             for i in range(0, x + 1):
                 self.userFlags[i] = self.v[i]
-            self.bumpSpecType(types.SCHIP)
+            self.bumpSpecType(SCHIP)
         elif nn == 0x85:
             # Load registers from "user flags" (SCHIP)
             for i in range(0, x + 1):
                 self.v[i] = self.userFlags[i]
-            self.bumpSpecType(types.SCHIP)
+            self.bumpSpecType(SCHIP)
 
     @micropython.native
     def machineCall(self, op:int, n:int):
         check = op & 0xFFF0
     	if check == 0x00C0:
     		self.display.scrollDown(n)
-    		self.bumpSpecType(types.SCHIP)
+    		self.bumpSpecType(SCHIP)
     		return
     	elif check == 0x00D0:
     		self.display.scrollUp(n)
-    		self.bumpSpecType(types.XOCHIP)
+    		self.bumpSpecType(XOCHIP)
     		return
 
         if op == 0x00E0:
@@ -384,22 +386,22 @@ class CPU:
             self.pc = self.stack[self.s(self.sp)]
         elif op == 0x00FB:
     		self.display.scrollRight()
-    		self.bumpSpecType(types.SCHIP)
+    		self.bumpSpecType(SCHIP)
     	elif op == 0x00FC:
     		self.display.scrollLeft()
-    		self.bumpSpecType(types.SCHIP)
+    		self.bumpSpecType(SCHIP)
     	elif op == 0x00FD:
     		# Exit interpreter
     		self.running = False
-    		self.bumpSpecType(types.SCHIP)
+    		self.bumpSpecType(SCHIP)
     	elif op == 0x00FE:
     		# Set normal screen resolution
     		self.display.setResolution(64, 32)
-    		self.bumpSpecType(types.SCHIP)
+    		self.bumpSpecType(SCHIP)
     	elif op == 0x00FF:
     		# Set extended screen resolution
     		self.display.setResolution(128, 64)
-    		self.bumpSpecType(types.SCHIP)
+    		self.bumpSpecType(SCHIP)
     	else:
             print("RCA 1802 assembly calls not supported at address", self.pc-2, "opcode", op)
             self.running = False
@@ -473,7 +475,7 @@ class CPU:
             print("Program attempted to access RAM outsize of memory")
             return 0
         if address >= CPU.VIP_SCHIP_RAM_SIZE:
-            self.bumpSpecType(types.XOCHIP)
+            self.bumpSpecType(XOCHIP)
         return address
 
     @micropython.native
@@ -482,7 +484,7 @@ class CPU:
             print("Program attempted to access invalid stack memory")
             return 0
         if self.stackSize == CPU.SCHIP_STACK_SIZE and address < (CPU.SCHIP_STACK_SIZE-CPU.DEFAULT_STACK_SIZE):
-            self.bumpSpecType(types.SCHIP)
+            self.bumpSpecType(SCHIP)
         return address
 
     @micropython.native
@@ -493,7 +495,7 @@ class CPU:
 
     def loadFont(self):
         myPath = "/".join(__file__.split("/")[0:-1])
-        if self.specType == types.SCHIP or self.specType == types.XOCHIP:
-            files.loadinto(myPath + '/assets/schipfont.bin', self.ram)
+        if self.specType == SCHIP or self.specType == XOCHIP:
+            loadinto(myPath + '/assets/schipfont.bin', self.ram)
         else:
-            files.loadinto(myPath + '/assets/chip8font.bin', self.ram)
+            loadinto(myPath + '/assets/chip8font.bin', self.ram)

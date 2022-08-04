@@ -1,6 +1,5 @@
 from framebuf import FrameBuffer, MONO_HLSB
 import types
-import time
 
 # Representation of the CHIP-8 display. Supports two planes and two screen
 # sizes. Implementation in MicroPython of all the operations, accurate to CHIP-8

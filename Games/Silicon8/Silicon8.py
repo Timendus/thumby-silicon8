@@ -14,9 +14,9 @@ from machine import freq, mem32, reset, soft_reset
 freq(250000000)
 
 # Fix import path so it finds our modules above all else
-import sys
+from sys import path
 myPath = "/".join(__file__.split("/")[0:-1])
-sys.path.insert(0, myPath)
+path.insert(0, myPath)
 
 import gc
 gc.threshold(2000)
@@ -32,6 +32,7 @@ def gb_collect():
     print("# Before gc\t{}%\t{}\t\t{}".format(a1/(a1+f1)*100, a1, f1))
     print("# After gc\t{}%\t{}\t\t{}".format(a2/(a2+f2)*100, a2, f2))
     print("# => Freed {} bytes ({}%)".format(f2-f1, (f2-f1)/(a2+f2)))
+    gc.collect()
 
 autorun = False
 try:
@@ -57,7 +58,7 @@ if autorun:
     except OSError:
         pass
 
-    # Load dependencies
+    # Load dependencies, limiting memory fragmentation
     gc.collect()
     from roms import loadFile, loadinto
     gc.collect()
@@ -65,7 +66,7 @@ if autorun:
     gc.collect()
     import cpu
     gc.collect()
-    import types
+    from types import VIP, SCHIP, XOCHIP
     gc.collect()
 
     # How to get back to the menu
@@ -77,11 +78,11 @@ if autorun:
     program = loadFile(autorun)
 
     # Set desired execution speed
-    if program["type"] == types.VIP:
+    if program["type"] == VIP:
         freq(50000000)
-    if program["type"] == types.SCHIP:
+    if program["type"] == SCHIP:
         freq(125000000)
-    if program["type"] == types.XOCHIP:
+    if program["type"] == XOCHIP:
         freq(250000000)
 
     # Let's get started!
@@ -104,6 +105,7 @@ if autorun:
     # Initialize the rest of the interpreter
     thumbyinterface.setKeys(program["keys"])
     thumbyinterface.display.setColourMap(program["cmap"])
+    gb_collect()
     instance.reset(program["type"])
 
     # Load program file directly into memory, unless it doesn't fit

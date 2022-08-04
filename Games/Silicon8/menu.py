@@ -1,5 +1,6 @@
-import thumby
-import time
+from thumbyGraphics import display
+from thumbyButton import buttonA, buttonB, buttonU, buttonD, buttonL, buttonR
+from time import ticks_ms
 
 class Menu:
     def __init__(self, selected = 0, scroll = 0):
@@ -15,32 +16,32 @@ class Menu:
         while True:
             self.animate = 0
             self.render()
-            self.lastInputTime = time.ticks_ms()
-            self.lastAnimateTime = time.ticks_ms()
+            self.lastInputTime = ticks_ms()
+            self.lastAnimateTime = ticks_ms()
             if self.waitInput():
                 return self.programs[self.selected], self.selected, self.scroll
 
     def waitInput(self):
         # Wait for button release
-        while thumby.buttonU.pressed() or thumby.buttonD.pressed() or thumby.buttonA.pressed() or thumby.buttonB.pressed():
+        while buttonU.pressed() or buttonD.pressed() or buttonA.pressed() or buttonB.pressed():
             pass
         # Wait for button press
         while True:
-            if thumby.buttonU.pressed() and self.selected > 0:
+            if buttonU.pressed() and self.selected > 0:
                 self.selected -= 1
                 if self.selected < self.scroll:
                     self.scroll -= 1
                 return False
-            if thumby.buttonD.pressed() and self.selected < len(self.programs)-1:
+            if buttonD.pressed() and self.selected < len(self.programs)-1:
                 self.selected += 1
                 if self.selected - 3 > self.scroll:
                     self.scroll += 1
                 return False
-            if thumby.buttonA.pressed() or thumby.buttonB.pressed():
+            if buttonA.pressed() or buttonB.pressed():
                 return True
 
             # Wait for animation to start
-            now = time.ticks_ms()
+            now = ticks_ms()
             if now - self.lastInputTime > 300 and now - self.lastAnimateTime > 20:
                 nameLength = len(self.programs[self.selected]["name"])
                 if nameLength > 12:
@@ -53,20 +54,20 @@ class Menu:
 
     def printline(self, string, highlight = False):
         if highlight:
-            thumby.display.drawFilledRectangle(0, self.row - 1, thumby.display.width, 9, 1)
-            thumby.display.drawText(string, 1 - self.animate, self.row, 0)
+            display.drawFilledRectangle(0, self.row - 1, display.width, 9, 1)
+            display.drawText(string, 1 - self.animate, self.row, 0)
             if len(string) > 12:
-                thumby.display.drawText(string, (len(string) + 2) * 6 - self.animate + 2, self.row, 0)
+                display.drawText(string, (len(string) + 2) * 6 - self.animate + 2, self.row, 0)
         else:
-            thumby.display.drawText(string, 1, self.row, 1)
+            display.drawText(string, 1, self.row, 1)
         self.row += 8
 
     def render(self):
-        thumby.display.fill(0)
+        display.fill(0)
         self.row = 1
         for i in range(self.scroll, len(self.programs)):
             self.printline(self.programs[i]["name"], self.selected == i)
-        thumby.display.update()
+        display.update()
 
 class Confirm:
     def __init__(self):
@@ -83,27 +84,27 @@ class Confirm:
 
         while True:
             self.render()
-            while thumby.buttonU.pressed() or \
-                  thumby.buttonD.pressed() or \
-                  thumby.buttonA.pressed() or \
-                  thumby.buttonB.pressed() or \
-                  thumby.buttonL.pressed() or \
-                  thumby.buttonR.pressed():
+            while buttonU.pressed() or \
+                  buttonD.pressed() or \
+                  buttonA.pressed() or \
+                  buttonB.pressed() or \
+                  buttonL.pressed() or \
+                  buttonR.pressed():
                 pass
             while True:
-                if thumby.buttonL.pressed():
+                if buttonL.pressed():
                     self.selected = 1
                     break
-                if thumby.buttonR.pressed():
+                if buttonR.pressed():
                     self.selected = 0
                     break
-                if thumby.buttonU.pressed() and self.scroll > 0:
+                if buttonU.pressed() and self.scroll > 0:
                     self.scroll -= 1
                     break
-                if thumby.buttonD.pressed() and self.scroll < len(self.text) - 3:
+                if buttonD.pressed() and self.scroll < len(self.text) - 3:
                     self.scroll += 1
                     break
-                if thumby.buttonA.pressed() or thumby.buttonB.pressed():
+                if buttonA.pressed() or buttonB.pressed():
                     return self.selected == 0
 
     # Figure out where to break the sentence so it makes sense to the reader.
@@ -134,9 +135,8 @@ class Confirm:
 
     @micropython.native
     def render(self):
-        disp = thumby.display
-        dt = disp.drawText
-        disp.fill(0)
+        dt = display.drawText
+        display.fill(0)
 
         # Show game information
         for i in range(0,4):
@@ -146,10 +146,10 @@ class Confirm:
 
         # Show bottom menu
         height = 10
-        top = disp.height - height
-        middle = int(disp.width / 2)
-        disp.drawFilledRectangle(0, top, disp.width, height, 1)
-        disp.drawFilledRectangle(self.selected * middle, top + 1, middle, height - 1, 0)
+        top = display.height - height
+        middle = int(display.width / 2)
+        display.drawFilledRectangle(0, top, display.width, height, 1)
+        display.drawFilledRectangle(self.selected * middle, top + 1, middle, height - 1, 0)
         dt("BACK", 6, top + 2, self.selected ^ 1)
         dt("RUN", middle + 10, top + 2, self.selected)
-        disp.update()
+        display.update()
