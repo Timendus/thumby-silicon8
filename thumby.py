@@ -29,7 +29,11 @@ timeFile = 'send.time'
 filesToCompileToMPY = [
     './Games/Silicon8/files.py',
     './Games/Silicon8/roms.py',
-    './Games/Silicon8/types.py'
+    './Games/Silicon8/types.py',
+    './Games/Silicon8/cpu.py',
+    './Games/Silicon8/grayscale.py',
+    './Games/Silicon8/menu.py',
+    './Games/Silicon8/thumbyinterface.py',
 ]
 
 
@@ -50,7 +54,7 @@ def build(files):
         mpyfile = name + '.mpy'
         if not exists(mpyfile) or (exists(mpyfile) and getmtime(mpyfile) < getmtime(file)):
             print("Compiling file", file[1:])
-            mpy_cross.run(file)
+            system('mpy-cross -march=armv6m ' + file)
 
 
 # Functions to run on the Thumby
@@ -151,14 +155,14 @@ class Thumby:
             if isfile(file) and self._hasBeenUpdated(file):
                 name, ext = splitext(file)
                 if ext == '.py' and isfile(name + '.mpy'):
-                    if self.exists(remotefile):
-                        print('Removing file', remotefile, '(because .mpy version exists now)')
-                        self._files().rm(remotefile)
-                    else:
-                        print('Skipping file', remotefile, '(because there is a .mpy version)')
+                    print('Skipping file', remotefile, '(because there is a .mpy version)')
                 else:
                     print("Sending file", remotefile)
                     self.put(file, remotefile)
+                remoteToDelete = name[1:] + '.py'
+                if ext == '.mpy' and self.exists(remoteToDelete):
+                    print('Removing file', remoteToDelete, '(because .mpy version exists now)')
+                    self._files().rm(remoteToDelete)
 
             # Create directories that don't exist yet
             if isdir(file):
