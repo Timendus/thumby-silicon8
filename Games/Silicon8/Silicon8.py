@@ -115,7 +115,13 @@ if autorun:
         resetToMenu()
 
     gb_collect()
-    instance.run()  # This will block as long as the program is running
+    try:
+        instance.run()  # This will block as long as the program is running
+    except Exception as err:
+        file = open(myPath + '/error.log', 'w')
+        file.write(str(err))
+        file.close()
+        raise err
     resetToMenu()
 
 else:
