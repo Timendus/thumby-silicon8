@@ -107,9 +107,15 @@ class Display:
         srcBuf2:ptr8 = chipDisp.buffers[1]
         size:int = int(len(srcBuf1))
         width:int = int(chipDisp.width) // 8
-        destBuf1:ptr8 = bytearray(size)
-        destBuf2:ptr8 = bytearray(size)
         lookup:ptr8 = self._colourLookup
+
+        if not hasattr(self, 'transformBuf1'):
+            self.transformBuf1 = bytearray(size)
+            self.transformFB1 = FrameBuffer(self.transformBuf1, int(chipDisp.width), int(chipDisp.height), MONO_HLSB)
+            self.transformBuf2 = bytearray(size)
+            self.transformFB2 = FrameBuffer(self.transformBuf2, int(chipDisp.width), int(chipDisp.height), MONO_HLSB)
+        destBuf1:ptr8 = self.transformBuf1
+        destBuf2:ptr8 = self.transformBuf2
 
         mask:int = 0b10000000
         while mask != 0:
@@ -129,10 +135,7 @@ class Display:
                 destBuf2[i] = (int(destBuf2[i]) & (mask ^ 0xFF)) | (mask & outB)
             mask = mask >> 1
 
-        fbuf1 = FrameBuffer(destBuf1, int(chipDisp.width), int(chipDisp.height), MONO_HLSB)
-        fbuf2 = FrameBuffer(destBuf2, int(chipDisp.width), int(chipDisp.height), MONO_HLSB)
-
-        return fbuf1, fbuf2
+        return self.transformFB1, self.transformFB2
 
 display = Display()
 
