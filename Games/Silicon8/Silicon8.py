@@ -58,6 +58,8 @@ def runSilicon8():
             return False
         if menu.Confirm().choose(program):
             break
+    thumby.display.fill(0)
+    thumby.display.update()
     return runProgram(program)
 
 def runProgram(program):
@@ -77,8 +79,6 @@ def runProgram(program):
     thumbyinterface.setKeys(program["keys"])
     thumbyinterface.display.setColourMap(program["cmap"])
     instance.reset(program["type"])
-    thumby.display.fill(0)
-    thumby.display.update()
 
     # Load program file directly into memory, unless it doesn't fit
     memory = memoryview(instance.ram)
@@ -87,7 +87,6 @@ def runProgram(program):
 
     gb_collect()
     instance.run()  # This will block as long as the program is running
-
     return True
 
 while runSilicon8():

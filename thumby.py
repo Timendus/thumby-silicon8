@@ -28,7 +28,6 @@ timeFile = 'send.time'
 # Use an empty list to disable compilation.
 filesToCompileToMPY = [
     './Games/Silicon8/files.py',
-    './Games/Silicon8/grayscale-calibration.py',
     './Games/Silicon8/roms.py',
     './Games/Silicon8/types.py'
 ]

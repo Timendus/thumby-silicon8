@@ -18,14 +18,17 @@ def stopSound():
 class Display:
     def __init__(self):
         self._colourMap = 0b00011011
-        self._initMonochrome()
 
-    def setType(self, type):
-        if type == types.GRAYSCALE and self._dispType == types.MONOCHROME:
+    def start(self, type):
+        self._dispType = type;
+        if type == types.GRAYSCALE:
             self._initGrayscale()
-        if type == types.MONOCHROME and self._dispType == types.GRAYSCALE:
-            self._gs.stop()
+        elif type == types.MONOCHROME:
             self._initMonochrome()
+
+    def stop(self):
+        if self._dispType == types.GRAYSCALE:
+            self._gs.stop()
 
     def setColourMap(self, map):
         self._colourMap = map
@@ -46,10 +49,6 @@ class Display:
             else:
                 raise "Invalid colour character in cmap"
 
-    def stop(self):
-        if self._dispType == types.GRAYSCALE:
-            self._gs.stop()
-
     def _initMonochrome(self):
         self._dispBuffer = FrameBuffer(
             thumby.display.display.buffer,
@@ -57,24 +56,22 @@ class Display:
             thumby.display.height,
             MONO_VLSB
         )
-        self._dispType = types.MONOCHROME
 
     def _initGrayscale(self):
         import grayscale
         self._gs = grayscale.Grayscale()
         self._dispBuffer1 = FrameBuffer(
-            self._gs.gsBuffer1.buffer,
+            self._gs.buffer1,
             self._gs.width,
             self._gs.height,
             MONO_VLSB
         )
         self._dispBuffer2 = FrameBuffer(
-            self._gs.gsBuffer2.buffer,
+            self._gs.buffer2,
             self._gs.width,
             self._gs.height,
             MONO_VLSB
         )
-        self._dispType = types.GRAYSCALE
 
     @micropython.viper
     def render(self, display):
@@ -89,9 +86,9 @@ class Display:
 
         if self._dispType == types.GRAYSCALE:
             buffer1, buffer2 = self._grayscaleTransform(display)
-            self._dispBuffer1.blit(buffer1, left, top, width, height)
-            self._dispBuffer2.blit(buffer2, left, top, width, height)
-            self._gs._joinBuffers()
+            self._dispBuffer1.blit(buffer2, left, top, width, height)
+            self._dispBuffer2.blit(buffer1, left, top, width, height)
+            self._gs.show()
 
     @micropython.viper
     def _grayscaleTransform(self, display):
