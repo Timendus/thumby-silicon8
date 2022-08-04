@@ -95,14 +95,13 @@ class Display:
 
     @micropython.viper
     def _grayscaleTransform(self, chipDisp):
-        colourMap = self._colourMap
-
-        if colourMap == "BDLW":
+        # These are the easy (and fast) cases
+        if self._colourMap == "BDLW":
             return chipDisp.frameBuffers[0], chipDisp.frameBuffers[1]
-
-        if colourMap == "BLDW":
+        if self._colourMap == "BLDW":
             return chipDisp.frameBuffers[1], chipDisp.frameBuffers[0]
 
+        # Otherwise, do a transformation
         srcBuf1:ptr8 = chipDisp.buffers[0]
         srcBuf2:ptr8 = chipDisp.buffers[1]
         size:int = int(len(srcBuf1))
