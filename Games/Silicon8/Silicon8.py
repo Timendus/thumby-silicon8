@@ -58,11 +58,12 @@ def runSilicon8():
             return False
         if menu.Confirm().choose(program):
             break
-    thumby.display.fill(0)
-    thumby.display.update()
     return runProgram(program)
 
 def runProgram(program):
+    thumby.display.fill(0)
+    thumby.display.update()
+
     gb_collect()
     instance = cpu.CPU()  # Instantiate interpreter
 
