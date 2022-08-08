@@ -31,7 +31,7 @@ class Display:
 
     def stop(self):
         if self._dispType == types.GRAYSCALE:
-            self._gs.stop()
+            self._gs.stopGPU()
 
     def setColourMap(self, map):
         self._colourMap = map
@@ -41,14 +41,14 @@ class Display:
                 self._colourLookup[0][(i&2)>>1][i&1] = 0x00
                 self._colourLookup[1][(i&2)>>1][i&1] = 0x00
             elif map[i] == "W":
-                self._colourLookup[0][(i&2)>>1][i&1] = 0xFF
-                self._colourLookup[1][(i&2)>>1][i&1] = 0xFF
-            elif map[i] == "L":
                 self._colourLookup[0][(i&2)>>1][i&1] = 0x00
                 self._colourLookup[1][(i&2)>>1][i&1] = 0xFF
-            elif map[i] == "D":
+            elif map[i] == "L":
                 self._colourLookup[0][(i&2)>>1][i&1] = 0xFF
                 self._colourLookup[1][(i&2)>>1][i&1] = 0x00
+            elif map[i] == "D":
+                self._colourLookup[0][(i&2)>>1][i&1] = 0xFF
+                self._colourLookup[1][(i&2)>>1][i&1] = 0xFF
             else:
                 raise "Invalid colour character in cmap"
 
@@ -62,19 +62,20 @@ class Display:
 
     def _initGrayscale(self):
         import grayscale
-        self._gs = grayscale.Grayscale()
+        self._gs = grayscale.display
         self._dispBuffer1 = FrameBuffer(
-            self._gs.buffer1,
+            self._gs.buffer,
             self._gs.width,
             self._gs.height,
             MONO_VLSB
         )
         self._dispBuffer2 = FrameBuffer(
-            self._gs.buffer2,
+            self._gs.shading,
             self._gs.width,
             self._gs.height,
             MONO_VLSB
         )
+        self._gs.startGPU()
 
     @micropython.viper
     def render(self, chipDisp):
@@ -96,9 +97,9 @@ class Display:
     @micropython.viper
     def _grayscaleTransform(self, chipDisp):
         # These are the easy (and fast) cases
-        if self._colourMap == "BDLW":
+        if self._colourMap == "BWDL":
             return chipDisp.frameBuffers[0], chipDisp.frameBuffers[1]
-        if self._colourMap == "BLDW":
+        if self._colourMap == "BDWL":
             return chipDisp.frameBuffers[1], chipDisp.frameBuffers[0]
 
         # Otherwise, do a transformation
