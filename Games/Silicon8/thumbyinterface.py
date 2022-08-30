@@ -24,10 +24,12 @@ class Display:
 
     def start(self, type):
         self._dispType = type;
-        if type == types.GRAYSCALE:
+        if type == types.GRAYSCALE or type == types.SCALED:
             self._initGrayscale()
         elif type == types.MONOCHROME:
             self._initMonochrome()
+        else:
+            raise "Unsupported display type"
 
     def stop(self):
         if self._dispType == types.GRAYSCALE:
@@ -79,20 +81,84 @@ class Display:
 
     @micropython.viper
     def render(self, chipDisp):
-        left:int   = (int(thumbyDisp.width) - int(chipDisp.width)) >> 1
-        top:int    = (int(thumbyDisp.height) - int(chipDisp.height)) >> 1
-        width:int  = min(int(chipDisp.width), int(thumbyDisp.width))
-        height:int = min(int(chipDisp.height), int(thumbyDisp.height))
+        chipWidth:int  = int(chipDisp.width)
+        chipHeight:int = int(chipDisp.height)
+        if self._dispType == types.SCALED:
+            chipWidth  = chipWidth >> 1
+            chipHeight = chipHeight >> 1
+
+        left:int   = (int(thumbyDisp.width) - chipWidth) >> 1
+        top:int    = (int(thumbyDisp.height) - chipHeight) >> 1
+        width:int  = min(chipWidth, int(thumbyDisp.width))
+        height:int = min(chipHeight, int(thumbyDisp.height))
 
         if self._dispType == types.MONOCHROME:
             self._dispBuffer.blit(chipDisp.frameBuffers[0], left, top, width, height)
             thumbyDisp.display.show()
+            return
 
         if self._dispType == types.GRAYSCALE:
             buffer1, buffer2 = self._grayscaleTransform(chipDisp)
-            self._dispBuffer1.blit(buffer2, left, top, width, height)
-            self._dispBuffer2.blit(buffer1, left, top, width, height)
-            self._gs.show()
+        else:
+            buffer1, buffer2 = self._scaleTransform(chipDisp)
+        self._dispBuffer1.blit(buffer2, left, top, width, height)
+        self._dispBuffer2.blit(buffer1, left, top, width, height)
+        self._gs.show()
+
+    @micropython.viper
+    def _scaleTransform(self, chipDisp):
+        # Scale the image down from black and white to grayscale
+        srcBuf:ptr8 = chipDisp.buffers[0]
+        size:int = int(len(srcBuf)) // 4
+        chipWidth:int = int(chipDisp.width) // 8
+        dispWidth:int = int(chipDisp.width) // 8 // 2
+
+        if not hasattr(self, 'transformBuf1'):
+            self.transformBuf1 = bytearray(size)
+            self.transformFB1 = FrameBuffer(self.transformBuf1, int(chipDisp.width) // 2, int(chipDisp.height) // 2, MONO_HLSB)
+            self.transformBuf2 = bytearray(size)
+            self.transformFB2 = FrameBuffer(self.transformBuf2, int(chipDisp.width) // 2, int(chipDisp.height) // 2, MONO_HLSB)
+        destBuf1:ptr8 = self.transformBuf1
+        destBuf2:ptr8 = self.transformBuf2
+
+        srcMask:int = 0b10000000
+        destMask:int = 0b10000000
+        pixels:int
+        j:int
+        nextByte:int = 0
+        while destMask != 0:
+            for i in range(size):
+                pixels = 0
+                i = int(i)
+                # Calculate the offset into the source buffer
+                # row: (i // dispWidth[8]) * 2 * chipWidth[16]
+                # col: (i % dispWidth[8]) * 2
+                # plus nextByte to see if we rolled over to the next byte
+                # Optimized into shifts and a mask
+                j = ((i >> 3) << 5) + ((i & 7) << 1) + nextByte
+
+                # Find the four pixels that make up this spot, count how many
+                # are actually lit
+                if int(srcBuf[j]) & srcMask: pixels += 1
+                if int(srcBuf[j]) & (srcMask >> 1): pixels += 1
+                if int(srcBuf[j + chipWidth]) & srcMask: pixels += 1
+                if int(srcBuf[j + chipWidth]) & (srcMask >> 1): pixels += 1
+
+                # pixels is now the number of pixels in the square of four that
+                # are lit up. Translate number to a colour.
+                # 0    -> Black      -> 00
+                # 1    -> Dark gray  -> 10
+                # 2    -> Light gray -> 11
+                # 3, 4 -> White      -> 01
+                destBuf1[i] = (int(destBuf1[i]) & (destMask ^ 0xFF)) | ((0xFF if pixels > 0 and pixels < 3 else 0x00) & destMask)
+                destBuf2[i] = (int(destBuf2[i]) & (destMask ^ 0xFF)) | ((0xFF if pixels > 1 else 0x00) & destMask)
+            destMask = destMask >> 1
+            srcMask = srcMask >> 2
+            if srcMask == 0:
+                srcMask = 0b10000000
+                nextByte = 1
+
+        return self.transformFB1, self.transformFB2
 
     @micropython.viper
     def _grayscaleTransform(self, chipDisp):
@@ -106,10 +172,10 @@ class Display:
         srcBuf1:ptr8 = chipDisp.buffers[0]
         srcBuf2:ptr8 = chipDisp.buffers[1]
         size:int = int(len(srcBuf1))
-        width:int = int(chipDisp.width) // 8
         lookup:ptr8 = self._colourLookup
 
         if not hasattr(self, 'transformBuf1'):
+            width:int = int(chipDisp.width) // 8
             self.transformBuf1 = bytearray(size)
             self.transformFB1 = FrameBuffer(self.transformBuf1, int(chipDisp.width), int(chipDisp.height), MONO_HLSB)
             self.transformBuf2 = bytearray(size)
@@ -118,15 +184,19 @@ class Display:
         destBuf2:ptr8 = self.transformBuf2
 
         mask:int = 0b10000000
+        inA:int
+        inB:int
+        outA:int
+        outB:int
         while mask != 0:
             for i in range(size):
                 i = int(i)
 
                 # Determine the 'colour' of the destination
-                inA:int = 1 if int(srcBuf1[i]) & mask else 0
-                inB:int = 1 if int(srcBuf2[i]) & mask else 0
-                outA:int = int(lookup[0][inA][inB])
-                outB:int = int(lookup[1][inA][inB])
+                inA = 1 if int(srcBuf1[i]) & mask else 0
+                inB = 1 if int(srcBuf2[i]) & mask else 0
+                outA = int(lookup[0][inA][inB])
+                outB = int(lookup[1][inA][inB])
 
                 # outA and outB are now either 0x00 or 0xFF to serve as a mask
                 # for the layers

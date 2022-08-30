@@ -18,10 +18,12 @@ def parseType(type):
 
 MONOCHROME = const(0)
 GRAYSCALE = const(1)
+SCALED = const(2)
 
 dispMap = {
     "MONOCHROME": MONOCHROME,
-    "GRAYSCALE": GRAYSCALE
+    "GRAYSCALE": GRAYSCALE,
+    "SCALED": SCALED
 }
 
 def parseDisp(type):
