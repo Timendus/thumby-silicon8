@@ -1,9 +1,10 @@
 from array import array
-from machine import Pin, SPI, idle
+from machine import Pin, SPI, idle, mem32
 from os import stat
-from utime import sleep_ms, ticks_diff, ticks_ms, ticks_us, sleep_us
+from math import sqrt, floor
+import utime
+from utime import sleep_ms, ticks_diff, ticks_ms, sleep_us
 import _thread
-from ssd1306 import SSD1306_SPI
 from thumbyButton import buttonA, buttonB, buttonU, buttonD, buttonL, buttonR
 from thumbySprite import Sprite as _Sprite
 
@@ -22,19 +23,21 @@ except ImportError:
 # calculations shown provide the value in seconds, which can be
 # multiplied by 1e6 to provide a microsecond value.
 # Both values are in microseconds.
-_PRE_FRAME_TIME = const(785) # 8 rows: (8*(1+1+50)) / 530e3 seconds
-_FRAME_TIME = const(4709) # 48 rows: (49*(1+1+50)) / 530e3 seconds
+_PRE_FRAME_TIME_US = const(785) # 8 rows: (8*(1+1+50)) / 530e3 seconds
+_FRAME_TIME_US = const(4709) # 48 rows: (49*(1+1+50)) / 530e3 seconds
 
 # Thread state variables for managing the Grayscale Thread.
 _THREAD_STOPPED = const(0)
-_THREAD_RUNNING = const(1)
-_THREAD_STOPPING = const(2)
+_THREAD_STARTING = const(1)
+_THREAD_RUNNING = const(2)
+_THREAD_STOPPING = const(3)
 
 # Indexes into the multipurpose state array, accessing a particular status.
 _ST_THREAD = const(0)
 _ST_COPY_BUFFS = const(1)
 _ST_PENDING_CMD = const(2)
 _ST_CONTRAST = const(3)
+_ST_INVERT = const(4)
 
 # Screen display size constants
 _WIDTH = const(72)
@@ -67,6 +70,7 @@ class Grayscale:
         self.frameRate = 0
         self.display = self # This acts as both the GraphicsClass and SSD1306
         self.contrast = self.brightness
+        # self.setFont('lib/font5x7.bin', 5, 7, 1)
 
         # Draw buffers.
         # This comprises of two full buffer lengths.
@@ -80,19 +84,24 @@ class Grayscale:
         # The "shading" buffer adds the grayscale
         self.shading = memoryview(self.drawBuffer)[_BUFF_SIZE:]
 
+        # Thred state buffer
+        # It's better to avoid using regular variables for thread sychronisation.
+        # Instead, elements of an array/bytearray should be used.
+        # We're also using a uint32 array here, as this more likely to ensure
+        # the atomicity of any element accesses.
+        # [thread_state, buff_copy_gate, pending_cmd_gate, constrast_change, inverted]
+        self._state = array('I', [_THREAD_STOPPED,0,0,0,0])
+        # Buffer to funnel cmds to the thread
+        self._pendingCmds = bytearray([0] * 8)
+
         # Display device configuration
+        self._initEmuScreen()
         self._spi = SPI(0, sck=Pin(18), mosi=Pin(19))
         self._dc = Pin(17)
         self._cs = Pin(16)
         self._res = Pin(20)
         self._res.init(Pin.OUT, value=1)
         self._spi.init(baudrate=100 * 1000 * 1000, polarity=0, phase=0)
-        # Black and White direct display for when the GPU is off (also inits)
-        self._displayBW = SSD1306_SPI(_WIDTH, _HEIGHT,
-            self._spi, dc=self._dc, res=self._res, cs=self._cs)
-        # Inject buffer to Black and White display
-        self._displayBW.buffer = self.buffer
-        self._initEmuScreen()
 
         # Display driver subframe buffers.
         # These essentially combine into one framebuffer,
@@ -103,9 +112,13 @@ class Grayscale:
 
         # Timing and display synchronisation commands.
         #
-        # DISCLAIMER: The following comments relating to the hardware
-        # may not be technically correct, and may instead only be
-        # effectively correct.
+        # NOTE: The method used to create reduced flicker greyscale using
+        # the SSD1306 uses certain assumptions about the internal behaviour
+        # of the controller. Even though the behaviour seems to back up
+        # those assumptions, it is possible that the assumptions are
+        # incorrect but the desired result is achieved anyway. To simplify
+        # things, the following comments are written as if the assumptions
+        # _are_ correct.
         #
         # We keep the display synchronised by resetting the row counter
         # before each frame and then outputting a frame of 57 rows.
@@ -137,37 +150,30 @@ class Grayscale:
         #           the calculation must work backwards from the last
         #.          controller row.
         # 0xa8,57-1 Set multiplex ratio to 57
-        self._postFrameCmds = bytearray([0xd3,40+(64-57), 0xa8,57-1])
+        self._postFrameCmds = bytearray([0xd3,_HEIGHT+(64-57), 0xa8,57-1])
 
         # Brightness modulation.
         # We enhance the greys by modulating the contrast,
         # limited to brightness setting from thumby.cfg
-        brightness = 127
+        # 0x81,<val>    GPU will set Bank0 contrast value to <val>
+        self._postFrameAdj = array('O', bytearray([0x81,0]) for i in range(3))
+        self._postFrameAdjSrc = bytearray(3)
+        self._brightness = 127
         try:
             with open("thumby.cfg", "r") as fh:
                 _, _, conf = fh.read().partition("brightness,")
                 b = int(conf.split(',')[0])
                 # Set to the relevant brightness level
-                brightness = 0 if b==0 else 56 if b==1 else 127
+                self._brightness = 0 if b==0 else 28 if b==1 else 127
         except (OSError, ValueError):
             pass
-        # 0x81,<val>    Set Bank0 contrast value to <val>
-        self._postFrameAdj = array('O', [
-            bytearray([0x81,brightness>>5]),
-            bytearray([0x81,brightness]),
-            bytearray([0x81,(brightness << 1) + 1])])
+        self.brightness(self._brightness)
 
-        # It's safer to avoid using regular variables for shared thread data.
-        # Instead, elements of an array/bytearray should be used.
-        # We're also using a uint32 array here, as thsis more likely to ensure
-        # the atomicity of any element accesses.
-        # [thread_state, buff_copy_gate, pending_cmd_gate, constrast_change]
-        self._state = array('I', [_THREAD_STOPPED,0,0,0xff])
-        # Buffer to funnel cmds to the thread
-        self._pendingCmds = bytearray([0] * 8)
-
-    # Garbage collect the GPU thread properly
-    def __del__(self):
+    # Allow use of 'with' for manaing the GPU state
+    def __enter__(self):
+        self.startGPU()
+        return self
+    def __exit__(self, type, value, traceback):
         self.stopGPU()
 
 
@@ -179,10 +185,14 @@ class Grayscale:
         if not emulator:
             return
         # Register draw buffer with emulator
+        Pin(2, Pin.OUT) # Ready display handshake pin
         emulator.screen_breakpoint(ptr16(self.drawBuffer))
+        self._clearEmuFunctions()
+    def _clearEmuFunctions(self):
         # Disable device controller functions
         def _disabled(*arg, **kwdarg):
             pass
+        self.invert = _disabled
         self.reset = _disabled
         self.poweron = _disabled
         self.poweroff = _disabled
@@ -198,42 +208,77 @@ class Grayscale:
         sleep_ms(10)
 
     def init_display(self):
+        self._dc(0)
+
+        if not self._display_initialised:
+            self._display_initialised = 1
+            self.reset()
+            self._cs(0)
+            self._dc(0)
+            # Usual initialisation, except with shortest pre-charge periods
+            # and highest clock frequency:
+            # 0xae          Display Off
+            # 0x20,0x00     Set horizontal addressing mode
+            # 0x40          Set display start line to 0
+            # 0xa1          Set segment remap mode 1
+            # 0xa8,63       Set multiplex ratio to 64 (will be changed later)
+            # 0xc8          Set COM output scan direction 1
+            # 0xd3,0        Set display offset to 0 (will be changed later)
+            # 0xda,0x12     Set COM pins hw config: alt config, disable left/right remap
+            # 0xd5,0xf0     Set clk div ratio = 1, and osc freq = ~370kHz
+            # 0xd9,0x11     Set pre-charge periods: phase 1 = 1 , phase 2 = 1
+            # 0xdb,0x20     Set Vcomh deselect level = 0.77 x Vcc
+            # 0x81,0x7f     Set Bank0 contrast to 127 (will be changed later)
+            # 0xa4          Do not enable entire display (i.e. use GDRAM)
+            # 0xa6          Normal (not inverse) display
+            # 0x8d,0x14     Charge bump setting: enable charge pump during display on
+            # 0xad,0x30     Select internal 30uA Iref (max Iseg=240uA) during display on
+            # 0xaf          Set display on
+            self._spi.write(bytearray([
+                0xae, 0x20,0x00, 0x40, 0xa1, 0xa8,63, 0xc8, 0xd3,0, 0xda,0x12,
+                0xd5,0xf0, 0xd9,0x11, 0xdb,0x20, 0x81,0x7f, 0xa4, 0xa6, 0x8d,0x14,
+                0xad,0x30, 0xaf]))
+            # clear the entire GDRAM
+            self._dc(1)
+            zero32 = bytearray(32)
+            for _ in range(32):
+                self._spi.write(zero32)
+            self._dc(0)
+            # set the GDRAM window
+            # 0x21,28,99    Set column start (28) and end (99) addresses
+            # 0x22,0,4      Set page start (0) and end (4) addresses0
+            self._spi.write(bytearray([0x21,28,99, 0x22,0,4]))
+
+        # (Re)Initialise the display for monocrhome timings
+        if self._state[_ST_THREAD] == _THREAD_STOPPED:
+            # Reinitialise to the normal configuration. Copied from ssd1306.py
+            # 0xa8,0        Set multiplex ratio to 0 (pausing updates)
+            # 0xd3,52       Set display offset to 52
+            # 0xd5,0x80     Set clk div ratio to standard Thumby levels
+            # 0xd9,0xf1     Set pre-charge periods to standard Thumby levels
+            self._spi.write(bytearray([
+                0xa8,0, 0xd3,52, 0xd5,0x80, 0xd9,0xf1]))
+            sleep_us(_FRAME_TIME_US*3)
+            # 0xa8,39       Set multiplex ratio to height (releasing updates)
+            # 0xd3,0        Set display offset to 0
+            self._spi.write(bytearray([0xa8,_HEIGHT-1,0xd3,0]))
+            if self._state[_ST_INVERT]:
+                self.write_cmd(0xa6 | 1) # Resume device color inversion
+            return
+
+        self.write_cmd(0xa6) # Stop device color inversion for GPU
         # Initialise the display for grayscale timings
-        self.reset()
-        self._cs(0)
-        self._dc(0)
         # Usual initialisation, except with shortest pre-charge periods
-        # and highest clock frequency:
-        # 0xae      Display Off
-        # 0x20,0x00 Set horizontal addressing mode
-        # 0x40      Set display start line to 0
-        # 0xa1      Set segment remap mode 1
-        # 0xa8,63   Set multiplex ratio to 64 (will be changed later)
-        # 0xc8      Set COM output scan direction 1
-        # 0xd3,54   Set display offset to 0 (will be changed later)
-        # 0xda,0x12 Set COM pins hw config: alt config, disable left/right remap
-        # 0xd5,0xf0 Set clk div ratio = 1, and osc freq = ~370kHz
-        # 0xd9,0x11 Set pre-charge periods: phase 1 = 1 , phase 2 = 1
-        # 0xdb,0x20 Set Vcomh deselect level = 0.77 x Vcc
-        # 0x81,0x7f Set Bank0 contrast to 127 (will be changed later)
-        # 0xa4      Do not enable entire display (i.e. use GDRAM)
-        # 0xa6      Normal (not inverse) display
-        # 0x8d,0x14 Charge bump setting: enable charge pump during display on
-        # 0xad,0x30 Select internal 30uA Iref (max Iseg=240uA) during display on
-        # 0xf       Set display on
+        # multiplex of 0, and highest clock frequency:
+        # 0xae          Display Off
+        # 0xa8,0        Set multiplex ratio to 0 (will be changed later)
+        # 0xd3,0        Set display offset to 0 (will be changed later)
+        # 0xd5,0xf0     Set clk div ratio = 1, and osc freq = ~370kHz
+        # 0xd9,0x11     Set pre-charge periods: phase 1 = 1 , phase 2 = 1
+        # 0xaf           Set display on
         self._spi.write(bytearray([
-            0xae, 0x20,0x00, 0x40, 0xa1, 0xa8,63, 0xc8, 0xd3,0, 0xda,0x12,
-            0xd5,0xf0, 0xd9,0x11, 0xdb,0x20, 0x81,0x7f, 0xa4, 0xa6, 0x8d,0x14,
-            0xad,0x30, 0xaf]))
-        self._dc(1)
-        # clear the entire GDRAM
-        for _ in range(32):
-            self._spi.write(bytearray(32))
-        self._dc(0)
-        # set the GDRAM window
-        # 0x21,28,99    Set column start (28) and end (99) addresses
-        # 0x22,0,4      Set page start (0) and end (4) addresses0
-        self._spi.write(bytearray([0x21,28,99, 0x22,0,4]))
+            0xae, 0xa8,0, 0xd3,0, 0xd5,0xf0, 0xd9,0x11, 0xaf]))
+    _display_initialised = 0
 
     @micropython.viper
     def show(self):
@@ -242,15 +287,18 @@ class Grayscale:
             state[_ST_COPY_BUFFS] = 1
             while state[_ST_COPY_BUFFS] != 0:
                 idle()
+        elif emulator:
+            mem32[0xD0000000+0x01C] = 1<<2
         else:
-            self._displayBW.show()
+            self._dc(1)
+            self._spi.write(self.buffer)
 
     @micropython.native
     def write_cmd(self, cmd):
         ### Send display controller commands ###
-        if cmd is list:
+        if isinstance(cmd, list):
             cmd = bytearray(cmd)
-        elif not cmd is bytearray:
+        elif not isinstance(cmd, bytearray):
             cmd = bytearray([cmd])
 
         # Handle when GPU isn't active
@@ -261,12 +309,16 @@ class Grayscale:
 
         # GPU is active - ferry the commans to the thread
         pendingCmds = self._pendingCmds
+        # We can't just break up the longer list of commands automatically,
+        # as we might end up separating a command and its parameter(s).
         assert len(cmd) <= len(pendingCmds), "Display commands too long"
-        # Fill the rest of the bytearray with display controller NOPs
-        cmd += bytearray([0x3e]*(len(pendingCmds)-len(cmd)))
-        # Send to GPU
-        for i in range(len(cmd)):
+        i = 0
+        while i < len(cmd):
             pendingCmds[i] = cmd[i]
+        # Fill the rest of the bytearray with display controller NOPs
+        while i < len(pendingCmds):
+            pendingCmds[i] = 0x3e
+            i += 1
         # Notify GPU and wait
         self._state[_ST_PENDING_CMD] = 1
         while self._state[_ST_PENDING_CMD]:
@@ -284,10 +336,11 @@ class Grayscale:
             self.show()
             return
 
-        if self._state[_ST_THREAD] != _THREAD_STOPPED:
-            self.stopGPU()
+        if self._state[_ST_THREAD] == _THREAD_RUNNING:
+            return
 
         # Start the GPU thread
+        self._state[_ST_THREAD] = _THREAD_STARTING
         self.init_display()
         _thread.stack_size(2048) # minimum stack size for RP2040 upython port
         _thread.start_new_thread(self._display_thread, ())
@@ -296,87 +349,154 @@ class Grayscale:
         while self._state[_ST_THREAD] != _THREAD_RUNNING:
             idle()
 
+
     @micropython.viper
     def _display_thread(self):
         ### GPU (Gray Processing Unit) thread function ###
         # cache various instance variables, buffers, and functions/methods
-        buffers = self._subframes
-        postFrameAdj = self._postFrameAdj
-        state = ptr32(self._state)
-        spi_write = self._spi.write
-        dc = self._dc
-        preFrameCmds = self._preFrameCmds
-        postFrameCmds = self._postFrameCmds
-        pendingCmds = self._pendingCmds
-        dBuf = ptr32(self.drawBuffer)
-        b1 = ptr32(buffers[0]); b2 = ptr32(buffers[1]); b3 = ptr32(buffers[2])
 
-        dc(0) # command mode
+        postFrameAdjSrc = ptr8(self._postFrameAdjSrc)
+        state = ptr32(self._state)
+
+        buffers:ptr32 = ptr32(array('L', [ptr8(self._subframes[0]), ptr8(self._subframes[1]), ptr8(self._subframes[2])]))
+        postFrameAdj:ptr32 = ptr32(array('L', [ptr8(self._postFrameAdj[0]), ptr8(self._postFrameAdj[1]), ptr8(self._postFrameAdj[2])]))
+        preFrameCmds:ptr8 = ptr8(self._preFrameCmds)
+        postFrameCmds:ptr8 = ptr8(self._postFrameCmds)
+        pendingCmds:ptr8 = ptr8(self._pendingCmds)
+
+        spi0:ptr32 = ptr32(0x4003c000)
+        tmr:ptr32 = ptr32(0x40054000)
+        sio:ptr32 = ptr32(0xd0000000)
+
+        dBuf = ptr32(self.drawBuffer)
+        b1 = ptr32(self._subframes[0]); b2 = ptr32(self._subframes[1]); b3 = ptr32(self._subframes[2])
+
         state[_ST_THREAD] = _THREAD_RUNNING
         while state[_ST_THREAD] == _THREAD_RUNNING:
             # This is the main GPU loop.
             # We cycle through each of the 3 display subframe buffers,
             # sending the framebuffer data and various commands.
-            for fn in range(3):
-                # Send fn'th subframe
-                t0 = ticks_us()
-                # Send the pre-frame commands to 'park' the row counter
-                spi_write(preFrameCmds)
-                # Now send the (sub) frame data
-                dc(1) # frame data mode
-                spi_write(buffers[fn])
-                dc(0) # back to command mode
-                # Send the first instance of the contrast adjust command
-                spi_write(postFrameAdj[fn])
-                # Wait for the pre-frame time to complete
-                sleep_us(_PRE_FRAME_TIME - int(ticks_diff(ticks_us(), t0)))
-                t0 = ticks_us()
-                # Send the post-frame commands to display the frame
-                spi_write(postFrameCmds)
-                # Adjust the contrast for the specific frame number again.
+            fn = 0
+            while fn < 3:
+                time_out = tmr[10] + _PRE_FRAME_TIME_US
+                # the 'dc' output is used to switch the controller to receive
+                # commands (0) or frame data (1)
+                sio[6] = 1 << 17 # dc(0)
+
+                # send the pre-frame commands to 'park' the row counter
+                # spi_write(preFrameCmds)
+                i = 0
+                while i < 4:
+                    while (spi0[3] & 2) == 0: pass          # while !(SPI0->SR & SPI_SSPSR_TNF_BITS): pass
+                    spi0[2] = preFrameCmds[i]               # SPI0->DR = buff[i]
+                    i += 1
+                while (spi0[3] & 4) == 4: i = spi0[2]       # while SPI0->SR & SPI_SSPSR_RNE_BITS: read SPI0->DR
+                while (spi0[3] & 0x10) == 0x10: pass        # while SPI0->SR & SPI_SSPSR_BSY_BITS: pass
+                while (spi0[3] & 4) == 4: i = spi0[2]       # while SPI0->SR & SPI_SSPSR_RNE_BITS: read SPI0->DR
+
+                sio[5] = 1 << 17 # dc(1)
+                # and then send the frame
+                # spi_write(buffers[fn])
+                i = 0
+                spibuff:ptr8 = ptr8(buffers[fn])
+                while i < 360:
+                    while (spi0[3] & 2) == 0: pass
+                    spi0[2] = spibuff[i]
+                    i += 1
+                while (spi0[3] & 4) == 4: i = spi0[2]
+                while (spi0[3] & 0x10) == 0x10: pass
+                while (spi0[3] & 4) == 4: i = spi0[2]
+
+                sio[6] = 1 << 17 # dc(0)
+                # send the first instance of the contrast adjust command
+                #spi_write(postFrameAdj[fn])
+                i = 0
+                spibuff:ptr8 = ptr8(postFrameAdj[fn])
+                while i < 2:
+                    while (spi0[3] & 2) == 0: pass
+                    spi0[2] = spibuff[i]
+                    i += 1
+                while (spi0[3] & 4) == 4: i = spi0[2]
+                while (spi0[3] & 0x10) == 0x10: pass
+                while (spi0[3] & 4) == 4: i = spi0[2]
+
+                # wait for the pre-frame time to complete
+                while (tmr[10] - time_out) < 0:
+                    pass
+
+                time_out = tmr[10] + _FRAME_TIME_US
+
+                # now send the post-frame commands to display the frame
+                # spi_write(postFrameCmds)
+                i = 0
+                while i < 4:
+                    while (spi0[3] & 2) == 0: pass
+                    spi0[2] = postFrameCmds[i]
+                    i += 1
+                # and adjust the contrast for the specific frame number again.
                 # If we do not do this twice, the screen can glitch.
-                spi_write(postFrameAdj[fn])
+                # spi_write(postFrameAdj[fn])
+                i = 0
+                spibuff:ptr8 = ptr8(postFrameAdj[fn])
+                while i < 2:
+                    while (spi0[3] & 2) == 0: pass
+                    spi0[2] = spibuff[i]
+                    i += 1
+                while (spi0[3] & 4) == 4: i = spi0[2]
+                while (spi0[3] & 0x10) == 0x10: pass
+                while (spi0[3] & 4) == 4: i = spi0[2]
 
                 # Tasks that only happen after the last subframe
-                if (fn == 2):
+                if fn == 2:
                     # Check if there's a pending frame copy required.
                     # We only copy the paint framebuffers to the display
                     # framebuffers on the last frame to avoid screen-tearing.
-                    if (state[_ST_COPY_BUFFS] != 0):
+                    if state[_ST_COPY_BUFFS] != 0:
                         # By using using ptr32 vars we copy 4 bytes at a time
-                        for i in range (_BUFF_INT_SIZE):
-                            v1 = dBuf[i]
-                            v2 = dBuf[i+_BUFF_INT_SIZE]
+                        i = 0
+                        j = _BUFF_INT_SIZE
+                        inv = -1 if state[_ST_INVERT] else 0
+                        while i < _BUFF_INT_SIZE:
+                            v1 = dBuf[i] ^ inv
+                            v2 = dBuf[j]
                             # This remaps to the different buffer format.
                             b1[i] = v1 | v2 # white, lightgray and darkgray
                             b2[i] = v1 # white and lightgray
                             b3[i] = v1 & (v1^v2) # white only
+                            i += 1
+                            j += 1
                         state[_ST_COPY_BUFFS] = 0
                     # Check if there's a pending contrast/brightness change
-                    elif (state[_ST_CONTRAST] != 0xff):
-                        contrast = state[_ST_CONTRAST]
-                        state[_ST_CONTRAST] = 0xff
-                        # Shift the value to provide 3 different levels
-                        postFrameAdj[0][1] = contrast >> 5
-                        postFrameAdj[1][1] = contrast >> 1
-                        postFrameAdj[2][1] = (contrast << 1) + 1
+                    if state[_ST_CONTRAST]:
+                        # Copy in the new contrast adjustments
+                        ptr8(postFrameAdj[0])[1] = postFrameAdjSrc[0]
+                        ptr8(postFrameAdj[1])[1] = postFrameAdjSrc[1]
+                        ptr8(postFrameAdj[2])[1] = postFrameAdjSrc[2]
+                        state[_ST_CONTRAST] = 0
                     # Check if there are pending display controller commands
                     elif state[_ST_PENDING_CMD]:
-                        spi_write(pendingCmds)
+                        #spi_write(pendingCmds)
+                        i = 0
+                        while i < 8:
+                            while (spi0[3] & 2) == 0: pass
+                            spi0[2] = pendingCmds[i]
+                            i += 1
+                        while (spi0[3] & 4) == 4: i = spi0[2]
+                        while (spi0[3] & 0x10) == 0x10: pass
+                        while (spi0[3] & 4) == 4: i = spi0[2]
                         state[_ST_PENDING_CMD] = 0
 
-                # Precise idle wait for next subframe timing.
-                # This is a two stage wait for the frame time to complete.
-                # We use sleep_ms first to allow idle loop usage,
-                # with >>10 for a fast /1000 approximation.
-                # Then we use sleep_us to busy wait for the precise time.
-                # TODO sleep_ms((_FRAME_TIME - int(ticks_diff(ticks_us(), t0))) >> 10)
-                sleep_us(_FRAME_TIME - int(ticks_diff(ticks_us(), t0)))
+                # wait for frame time to complete
+                while (tmr[10] - time_out) < 0:
+                    pass
+
+                fn += 1
 
         # Announce the thread is done
         state[_ST_THREAD] = _THREAD_STOPPED
 
-    def stopGPU(self, modeGPU=0):
+
+    def stopGPU(self):
         ### Disable grayscale, stopping the running thread.
         # If modeGPU is set to 1, it will not reset the display
         # controller configuration.
@@ -391,22 +511,47 @@ class Grayscale:
             self._state[_ST_THREAD] = _THREAD_STOPPING
             while self._state[_ST_THREAD] != _THREAD_STOPPED:
                 idle()
-        # Refresh the image to the B/W form
-        if not modeGPU:
-            self._displayBW.init_display()
-        self.show()
+            # Refresh the image to the B/W form
+            self.init_display()
+            self.show()
+            # Change back to the original (unmodulated) brightness setting
+            self.brightness(self._brightness)
 
 
     ## GraphicsClass functions ##
 
-    def brightness(self, c):
-        if c < 0:
-            c = 0
-        elif c > 127:
-            c = 127
+
+    @micropython.viper
+    def brightness(self, c:int):
+        c = 0 if c<0 else 127 if c>127 else c
+        state = ptr32(self._state)
+        postFrameAdj = self._postFrameAdj
+        postFrameAdjSrc = ptr8(self._postFrameAdjSrc)
+
+        # Provide 3 different subframe levels for the GPU
+        # Low (0): 0, 5, 15
+        # Mid (28): 4, 42, 173
+        # High (127):  9, 84, 255
+        cc = int(floor(sqrt(c<<17)))
+        postFrameAdjSrc[0] = (cc*30>>12)+6
+        postFrameAdjSrc[1] = (cc*72>>12)+14
+        c3 = (cc*340>>12)+20
+        postFrameAdjSrc[2] = c3 if c3 < 255 else 255
+
+        # Apply to display, GPU, and emulator
         if state[_ST_THREAD] == _THREAD_RUNNING:
-            self._state[_ST_CONTRAST] = c
+            state[_ST_CONTRAST] = 1
         else:
-            self._displayBW.contrast(c)
+            # Copy in the new contrast adjustments for when the GPU starts
+            postFrameAdj[0][1] = postFrameAdjSrc[0]
+            postFrameAdj[1][1] = postFrameAdjSrc[1]
+            postFrameAdj[2][1] = postFrameAdjSrc[2]
+            # Apply the contrast directly to the display
+            if emulator:
+                emulator.brightness_breakpoint(c)
+            else:
+                self.write_cmd([0x81, c])
+        # Save the intended contrast for whenever the GPU stops
+        ptr32(self._brightness)[0] = c << 1 | 1
 
 display = Grayscale()
