@@ -1,0 +1,15 @@
+{
+  "name": "Rockto (SupSuper, 2014)",
+  "link": "https://johnearnest.github.io/chip8Archive/play.html?p=rockto",
+  "desc": "An adaptation of \"Boulder Dash\" for CHIP-8",
+  "type": "SCHIP",
+  "disp": "SCALED",
+  "keys": {
+    "up": 5,
+    "left": 7,
+    "right": 9,
+    "down": 8,
+    "a": 6,
+    "b": 6
+  }
+}

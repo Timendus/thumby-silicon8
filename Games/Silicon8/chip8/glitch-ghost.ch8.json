@@ -1,0 +1,14 @@
+{
+  "name": "Glitch Ghost (Jackie Kircher, 2014)",
+  "link": "https://johnearnest.github.io/chip8Archive/play.html?p=glitchGhost",
+  "desc": "Glitch ghost is all alone in the cemetery, please help them make some friends by turning the trespassing humans into new ghosts!\n\nGoal\nEach screen of the cemetery has a unique layout of tombstones. You'll need to figure out how to get each person to run into their own graves. Once scared, each person will run away from glitch ghost and turn right whenever they encounter an obstacle, be it a grave, the fence, or even glitch ghost themselves. Only one person will enter the cemetery at a time, and they'll always come in through the front gate.",
+  "type": "XOCHIP",
+  "keys": {
+    "up": 5,
+    "left": 7,
+    "right": 9,
+    "down": 8,
+    "a": 6,
+    "b": 6
+  }
+}
