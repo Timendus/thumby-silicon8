@@ -551,7 +551,8 @@ class Grayscale:
                 emulator.brightness_breakpoint(c)
             else:
                 self.write_cmd([0x81, c])
+
         # Save the intended contrast for whenever the GPU stops
-        ptr32(self._brightness)[0] = c << 1 | 1
+        setattr(self, '_brightness', c << 1 | 1)
 
 display = Grayscale()
