@@ -1,3 +1,5 @@
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/T6T0DOOWP)
+
 # Silicon8 for Thumby
 
 **Silicon8 for Thumby** is an interpreter for the CHIP-8, SCHIP and XO-CHIP
