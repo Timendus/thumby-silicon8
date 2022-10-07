@@ -1,0 +1,14 @@
+{
+  "name": "Slippery Slope (John Earnest, 2018)",
+  "link": "https://johnearnest.github.io/chip8Archive/play.html?p=slipperyslope",
+  "desc": "A very cute little game where you find yourself sliding around, trying to solve each puzzle to get to the exit.\n\nSlide around using UP, DOWN, LEFT and RIGHT. Reset the level with A or B.",
+  "type": "SCHIP",
+  "keys": {
+    "up": 5,
+    "down": 8,
+    "left": 7,
+    "right": 9,
+    "a": 6,
+    "b": 6
+  }
+}

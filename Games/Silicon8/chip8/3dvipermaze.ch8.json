@@ -1,0 +1,16 @@
+{
+  "name": "3D Viper Maze (Timendus, 2020)",
+  "link": "https://github.com/Timendus/3d-viper-maze",
+  "desc": "NOTE: this is a grayscale game, and does not work in the emulator.\n\n3D Viper Maze is an homage to the Sinclair ZX81 game 3D Monster Maze from 1981. This is not a game with an endless supply of randomly generated mazes, however. Instead, it has handcrafted levels with vipers, coins and buttons. Your challenge, if you accept it: to find the exit in each maze, while collecting all the coins, in a series of ever more difficult puzzles.\n\nMove around with UP, DOWN, LEFT and RIGHT. Use A or B to show a map of the maze.",
+  "type": "XOCHIP",
+  "disp": "GRAYSCALE",
+  "cmap": "LDWB",
+  "keys": {
+    "up": 5,
+    "down": 8,
+    "left": 7,
+    "right": 9,
+    "a": 1,
+    "b": 1
+  }
+}

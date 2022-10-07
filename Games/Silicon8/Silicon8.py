@@ -7,73 +7,179 @@
 # See https://github.com/Timendus/thumby-silicon8 for more information and
 # licensing information.
 
-import thumby
+_WATCHDOG_BASE=const(0x40058000)
+_SCRATCH0_ADDR=const(_WATCHDOG_BASE+0x0C)
 
-splash = bytearray([
-    0,0,0,0,0,0,0,224,248,60,14,14,7,7,3,3,7,7,14,14,12,0,0,0,0,0,32,32,192,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,224,240,120,28,14,6,6,6,14,28,120,240,224,0,
-    0,0,0,0,0,0,0,15,31,56,112,96,96,224,192,192,192,128,128,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,15,30,184,240,224,224,224,240,184,30,15,7,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,3,15,254,248,0,0,196,64,0,0,255,0,0,196,64,0,0,0,128,64,64,64,0,0,0,128,64,64,128,0,0,0,192,64,64,64,128,0,0,0,252,254,15,3,1,0,0,0,1,3,15,254,252,0,
-    0,48,112,112,224,224,192,192,192,192,192,192,192,192,224,96,112,56,28,15,7,1,0,0,63,0,0,0,63,0,0,63,0,0,0,15,16,32,32,32,0,0,15,16,32,32,16,15,0,0,63,0,0,0,0,63,0,0,3,7,15,28,56,48,48,48,56,28,15,7,3,0,
-    0,60,66,66,66,0,124,16,16,124,0,122,0,124,20,20,8,0,40,84,84,40,0,0,0,66,126,66,0,124,4,4,120,0,62,68,0,56,84,84,88,0,124,8,4,0,124,20,20,8,0,124,8,4,0,56,84,84,88,0,62,68,0,56,84,84,88,0,124,8,4,0
-])
-
-# Stop sound and show splash while we wait ;)
-thumby.audio.stop()
-thumby.display.setFPS(0)
-thumby.display.blit(splash, 0, 0, 72, 40, -1, 0, 0)
-thumby.display.update()
+from machine import freq, mem32, reset, soft_reset
+freq(250000000)
 
 # Fix import path so it finds our modules above all else
-import sys
-sys.path.insert(0, '/Games/Silicon8')
+from sys import path
+myPath = "/".join(__file__.split("/")[0:-1])
+path.insert(0, myPath)
 
-import time
 import gc
-import machine
-import thumbyinterface
-import roms
-import cpu
-import menu
-
+gc.threshold(2000)
 gc.enable()
 
-index = 0
-scroll = 0
-
 def gb_collect():
-    print("Free memory before garbage collect:", gc.mem_free())
+    a1 = gc.mem_alloc()
+    f1 = gc.mem_free()
     gc.collect()
-    print("Free memory after garbage collect:", gc.mem_free())
+    a2 = gc.mem_alloc()
+    f2 = gc.mem_free()
+    print("### \t\tUsed\t\tAllocated\tFree")
+    print("# Before gc\t{}%\t{}\t\t{}".format(a1/(a1+f1)*100, a1, f1))
+    print("# After gc\t{}%\t{}\t\t{}".format(a2/(a2+f2)*100, a2, f2))
+    print("# => Freed {} bytes ({}%)".format(f2-f1, (f2-f1)/(a2+f2)))
+    gc.collect()
 
-def runSilicon8():
-    global index, scroll
+autorun = False
+try:
+    file = open(myPath + "/autorun", "r")
+    autorun = file.read()
+    file.close()
+except OSError:
+    pass
+
+if autorun:
+
+    ### Launch CHIP-8 program!
+
+    # Show simple loading screen
+    from thumbyGraphics import display
+    display.drawText('Loading...', 8, 17, 1)
+    display.update()
+
+    # Make sure we boot back into the menu next time
+    from os import remove
+    try:
+        remove(myPath + "/autorun")
+    except OSError:
+        pass
+
+    # Load dependencies, limiting memory fragmentation
+    gc.collect()
+    from roms import loadFile, loadinto
+    gc.collect()
+    import thumbyinterface
+    gc.collect()
+    import cpu
+    gc.collect()
+    from types import VIP, SCHIP, XOCHIP
+    gc.collect()
+
+    # How to get back to the menu
+    def resetToMenu():
+        mem32[_SCRATCH0_ADDR] = 1
+        soft_reset()
+
+    # Load the program to run
+    program = loadFile(autorun)
+
+    # Set desired execution speed
+    if program["type"] == VIP:
+        freq(50000000)
+    if program["type"] == SCHIP:
+        freq(125000000)
+    if program["type"] == XOCHIP:
+        freq(250000000)
+
+    # Let's get started!
+    gb_collect()
+    instance = cpu.CPU()  # Instantiate interpreter
+
+    # Clear screen
+    display.fill(0)
+    display.update()
+
+    # Start the display, which may start a grayscale thread
+    try:
+        thumbyinterface.display.start(program["disp"])
+    except NotImplementedError as err:
+        # User is not on at least MicroPython v1.19.1, and grayscale library
+        # can't run. This should be handled more gracefully, but for now, reset.
+        print("We need at least MicroPython v1.19.1 for grayscale programs")
+        resetToMenu()
+
+    # Initialize the rest of the interpreter
+    thumbyinterface.setKeys(program["keys"])
+    thumbyinterface.display.setColourMap(program["cmap"])
+    gb_collect()
+    instance.reset(program["type"])
+
+    # Load program file directly into memory, unless it doesn't fit
+    memory = memoryview(instance.ram)
+    if loadinto(program, memory[512:]) == -1:
+        print("Not enough CHIP-8 RAM to load the program")
+        resetToMenu()
+
+    gb_collect()
+    try:
+        instance.run()  # This will block as long as the program is running
+    except Exception as err:
+        file = open(myPath + '/error.log', 'w')
+        file.write(str(err))
+        file.close()
+        raise err
+    resetToMenu()
+
+else:
+
+    ### Show the menu
+
+    # Reset screen brightness to system default
+    from thumbyGraphics import display
+    brightnessSetting=2
+    try:
+        file = open("thumby.cfg", "r")
+        conf = file.read().split(',')
+        for k in range(len(conf)):
+            if(conf[k] == "brightness"):
+                brightnessSetting = int(conf[k+1])
+        file.close()
+    except OSError:
+        pass
+    brightnessVals=[0,28,127]
+    display.brightness(brightnessVals[brightnessSetting])
+
+    # Show splash while we wait ;)
+    from thumbySprite import Sprite
+    display.drawSprite(Sprite(72, 40, myPath + "/assets/splash.bin"))
+    display.update()
+
+    # Stop audio if still playing
+    from thumbyAudio import audio
+    audio.stop()
+
+    # Load dependencies
+    import roms
+    import menu
+
+    # How to load a program
+    def resetToProgram(program):
+        display.fill(0)
+        display.drawText('Loading...', 8, 17, 1)
+        display.update()
+        try:
+            file = open(myPath + "/autorun", "w")
+            file.write(program["file"])
+            file.close()
+        except OSError:
+            print("Could not write autorun file")
+            reset()
+        mem32[_SCRATCH0_ADDR] = 1
+        soft_reset()
+
+    freq(125000000)
+    index = 0
+    scroll = 0
+
     # Ask user to choose a ROM
     while True:
         gb_collect()
         program, index, scroll = menu.Menu(index, scroll).choose(roms.catalog())
         if not program["file"]:
-            return False
+            reset()
         if menu.Confirm().choose(program):
-            break
-
-    gb_collect()
-
-    # Instantiate interpreter
-    instance = cpu.CPU()
-
-    # Set up 60Hz interrupt handler
-    timer = machine.Timer()
-    timer.init(mode=timer.PERIODIC, period=17, callback=instance.clockTick)
-
-    # Start the interpreter
-    thumbyinterface.setKeys(program["keys"])
-    instance.reset(program["type"])
-    thumby.display.fill(0)
-    thumby.display.update()
-    instance.run(roms.load(program))
-    return True
-
-while runSilicon8():
-    pass
-
-thumby.reset()
+            resetToProgram(program)
